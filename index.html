@@ -1040,45 +1040,50 @@
                 console.error("Firebase Init Error:", err);
             }
         } else {
-            console.warn("⚠️ รันโหมดไม่มีฐานข้อมูล (Offline Mode): ข้อมูลจะแสดงผลและใช้งานได้ปกติ แต่จะหายไปเมื่อคุณรีเฟรชหน้าเว็บ หากต้องการให้เซฟถาวร กรุณาไปสมัคร Firebase และนำค่า config มาใส่ในโค้ดครับ");
+            console.warn("⚠️ รันโหมดไม่มีฐานข้อมูลคลาวด์: ระบบจะใช้ Local Storage ในการบันทึกข้อมูล ข้อมูลจะไม่หายเมื่อรีเฟรช แต่อยู่เฉพาะในเครื่องนี้เท่านั้น");
         }
 
-        // ดึงข้อมูล Real-time
+        // ดึงข้อมูล Real-time จาก Firebase (ถ้ามีการเชื่อมต่อ)
         function setupListeners() {
             if (!db || !currentUser) return;
             
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'repairs'), (snapshot) => {
                 window.dataList = [];
                 snapshot.forEach(doc => window.dataList.push(doc.data()));
+                saveLocal(); // อัปเดต Local ให้ตรงกับคลาวด์
                 if(window.renderReportTable) { window.renderReportTable(); window.updateStats(); window.updateMarkers(); }
             }, (e) => console.error(e));
 
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'installations'), (snapshot) => {
                 window.installJobs = [];
                 snapshot.forEach(doc => window.installJobs.push(doc.data()));
+                saveLocal();
                 if(window.renderInstallTable) { window.renderInstallTable(); window.updateStats(); }
             }, (e) => console.error(e));
 
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'stock'), (snapshot) => {
                 window.stockItems = [];
                 snapshot.forEach(doc => window.stockItems.push(doc.data()));
+                saveLocal();
                 if(window.renderStock) window.renderStock();
             }, (e) => console.error(e));
 
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'locations'), (snapshot) => {
                 window.locationsDB = [];
                 snapshot.forEach(doc => window.locationsDB.push(doc.data()));
+                saveLocal();
                 if(window.renderLocations) { window.renderLocations(); window.updateMarkers(); }
             }, (e) => console.error(e));
 
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'borrows'), (snapshot) => {
                 window.borrowRecords = [];
                 snapshot.forEach(doc => window.borrowRecords.push(doc.data()));
+                saveLocal();
                 if(window.renderBorrowTable) window.renderBorrowTable();
             }, (e) => console.error(e));
         }
 
-        // ฟังก์ชันสั่งเซฟ/ลบ เข้าคลาวด์ พร้อม Try-Catch กันแอปพังหากเน็ตหลุดหรือไม่ได้ใส่ Firebase
+        // ฟังก์ชันสั่งเซฟ/ลบ เข้าคลาวด์
         window.dbOp = {
             saveRepair: async (data) => { try { if(db && currentUser) await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'repairs', data.id), data); } catch(e){ console.error(e); } },
             deleteRepair: async (id) => { try { if(db && currentUser) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'repairs', id)); } catch(e){ console.error(e); } },
@@ -1094,15 +1099,25 @@
     </script>
 
     <script>
-        // --- STATE ---
+        // --- STATE & LOCAL STORAGE (ระบบเซฟข้อมูลลงเบราว์เซอร์อัตโนมัติ) ---
         const todayObj = new Date();
         const todayStr = todayObj.toISOString().split('T')[0];
         
-        var dataList = [];
-        var installJobs = [];
-        var stockItems = [];
-        var locationsDB = [];
-        var borrowRecords = [];
+        // ดึงข้อมูลจาก LocalStorage ทันทีที่เปิดเว็บ (กันข้อมูลหายตอนรีเฟรช)
+        var dataList = JSON.parse(localStorage.getItem('cctv_repairs')) || [];
+        var installJobs = JSON.parse(localStorage.getItem('cctv_installs')) || [];
+        var stockItems = JSON.parse(localStorage.getItem('cctv_stocks')) || [];
+        var locationsDB = JSON.parse(localStorage.getItem('cctv_locations')) || [];
+        var borrowRecords = JSON.parse(localStorage.getItem('cctv_borrows')) || [];
+
+        // ฟังก์ชันสั่งเซฟข้อมูลลงเครื่อง
+        window.saveLocal = function() {
+            localStorage.setItem('cctv_repairs', JSON.stringify(dataList));
+            localStorage.setItem('cctv_installs', JSON.stringify(installJobs));
+            localStorage.setItem('cctv_stocks', JSON.stringify(stockItems));
+            localStorage.setItem('cctv_locations', JSON.stringify(locationsDB));
+            localStorage.setItem('cctv_borrows', JSON.stringify(borrowRecords));
+        };
 
         let currentActiveWO = null;
         let currentImageBase64 = ''; 
@@ -1373,6 +1388,8 @@
             const existingIdx = installJobs.findIndex(x => x.id === data.id);
             if(existingIdx >= 0) installJobs[existingIdx] = data;
             else installJobs.push(data);
+            
+            saveLocal(); // บันทึกลงเครื่อง
             renderInstallTable();
 
             if(window.dbOp) window.dbOp.saveInstall(data);
@@ -1383,6 +1400,7 @@
             if(confirm('ลบงานติดตั้งนี้อย่างถาวร?')) {
                 // Optimistic Delete ทันที
                 installJobs = installJobs.filter(x => x.id !== id);
+                saveLocal();
                 renderInstallTable();
                 if(window.dbOp) window.dbOp.deleteInstall(id);
             }
@@ -1552,6 +1570,8 @@
             const existingIdx = dataList.findIndex(x => x.id === newData.id);
             if(existingIdx >= 0) dataList[existingIdx] = newData;
             else dataList.push(newData);
+            
+            saveLocal(); // บันทึกลงเครื่อง
 
             // เซฟข้อมูลไป Firebase (ทำงานเบื้องหลัง)
             if(window.dbOp) window.dbOp.saveRepair(newData);
@@ -1713,6 +1733,7 @@
             if(confirm('ยืนยันการลบใบงานนี้อย่างถาวร?')) {
                 // Optimistic Delete ทันที
                 dataList = dataList.filter(x => x.id !== currentActiveWO.id);
+                saveLocal();
                 renderReportTable();
                 if(window.dbOp) window.dbOp.deleteRepair(currentActiveWO.id);
                 closeModal('modal-work-order');
@@ -1871,6 +1892,8 @@
             const existingIdx = stockItems.findIndex(x => x.id === data.id);
             if(existingIdx >= 0) stockItems[existingIdx] = data;
             else stockItems.push(data);
+            
+            saveLocal();
             renderStock();
 
             if(window.dbOp) window.dbOp.saveStock(data);
@@ -1881,6 +1904,7 @@
             if(confirm('คุณยืนยันที่จะลบอุปกรณ์นี้ออกจากระบบใช่หรือไม่?')) {
                 // Optimistic Delete ทันที
                 stockItems = stockItems.filter(x => x.id !== id);
+                saveLocal();
                 renderStock();
                 if(window.dbOp) window.dbOp.deleteStock(id);
             }
@@ -1894,6 +1918,7 @@
                 
                 // Optimistic Update ทันที
                 item.qty = newQty;
+                saveLocal();
                 renderStock();
 
                 if(window.dbOp) window.dbOp.saveStock(item);
@@ -1953,6 +1978,8 @@
                     status: 'กำลังยืม'
                 };
                 borrowRecords.push(borrowData);
+                
+                saveLocal(); // บันทึกลงเครื่อง
                 renderStock();
                 renderBorrowTable();
 
@@ -2021,6 +2048,7 @@
                 
                 // Optimistic Update ทันที
                 b.status = 'คืนแล้ว';
+                saveLocal();
                 renderBorrowTable();
                 
                 if(window.dbOp) window.dbOp.saveBorrow(b);
@@ -2121,6 +2149,8 @@
             const existingIdx = locationsDB.findIndex(x => x.id === data.id);
             if(existingIdx >= 0) locationsDB[existingIdx] = data;
             else locationsDB.push(data);
+            
+            saveLocal();
             renderLocations();
 
             if(window.dbOp) window.dbOp.saveLocation(data);
@@ -2131,6 +2161,7 @@
             if(confirm('ลบจุดติดตั้งนี้ออกจากฐานข้อมูล? (หากลบแล้ว ประวัติเดิมจะยังคงอยู่)')) {
                 // Optimistic Delete ทันที
                 locationsDB = locationsDB.filter(x => x.id !== id);
+                saveLocal();
                 renderLocations();
                 if(window.dbOp) window.dbOp.deleteLocation(id);
             }
@@ -2229,6 +2260,7 @@
                 ticket.history = newHist;
 
                 // Optimistic Update ทันที
+                saveLocal();
                 renderReportTable();
                 if(window.dbOp) window.dbOp.saveRepair(ticket);
             }
