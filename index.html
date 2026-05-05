@@ -257,6 +257,9 @@
                         <button onclick="switchTab('stock')" id="nav-stock" class="nav-btn">
                             <i data-lucide="box" class="w-5 h-5"></i> <span class="hidden xl:inline">คลังพัสดุ</span>
                         </button>
+                        <button onclick="switchTab('borrow')" id="nav-borrow" class="nav-btn">
+                            <i data-lucide="handshake" class="w-5 h-5"></i> <span class="hidden xl:inline">ยืม-คืนพัสดุ</span>
+                        </button>
                     </div>
                 </nav>
 
@@ -264,8 +267,7 @@
                 <div class="flex items-center gap-4 pl-6 border-l border-slate-200 shrink-0">
                     <div class="hidden lg:flex items-center gap-4 pr-4">
                         <div class="text-right">
-                            <p class="text-sm font-black text-slate-800 leading-none">Admin User</p>
-                            <p class="text-[10px] text-blue-500 font-black uppercase tracking-widest mt-1">Super Admin</p>
+                            <p class="text-sm font-black text-slate-800 leading-none">Admin</p>
                         </div>
                         <div class="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center font-black text-blue-600 shadow-sm">
                             <i data-lucide="user" class="w-5 h-5"></i>
@@ -465,6 +467,42 @@
                 </div>
                 <div id="stock-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-fade-in delay-1">
                     <!-- Cards will be injected by JavaScript renderStock() -->
+                </div>
+            </div>
+
+            <!-- --- BORROW TAB (ยืม-คืนอุปกรณ์) --- -->
+            <div id="tab-borrow" class="tab-content space-y-8">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 animate-fade-in">
+                    <div>
+                        <h2 class="text-4xl font-black text-slate-800 tracking-tighter uppercase">Borrow & Return</h2>
+                        <p class="text-slate-500 font-medium mt-1">ระบบบันทึกประวัติการยืม-คืนอุปกรณ์ และจัดการสถานะการยืมทั้งหมด</p>
+                    </div>
+                    <div class="flex gap-2 w-full md:w-auto">
+                        <button onclick="exportCSV('borrows')" class="flex-1 md:flex-none px-6 py-3.5 bg-emerald-600 text-white rounded-2xl font-bold text-sm hover:bg-emerald-700 flex justify-center items-center gap-2 transition-all shadow-sm">
+                            <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Export CSV
+                        </button>
+                        <button onclick="switchTab('stock')" class="flex-1 md:flex-none bg-amber-500 text-white px-8 py-3.5 rounded-2xl font-black flex items-center justify-center gap-3 hover:bg-amber-600 transition-all shadow-xl hover:-translate-y-1">
+                            <i data-lucide="box" class="w-5 h-5"></i> ไปหน้าคลังเพื่อยืมอุปกรณ์
+                        </button>
+                    </div>
+                </div>
+                <div class="bg-white rounded-[2.5rem] border border-slate-200 overflow-hidden shadow-xl shadow-slate-200/40 animate-fade-in delay-1">
+                    <div class="overflow-x-auto no-scrollbar">
+                        <table class="w-full text-left min-w-[900px]">
+                            <thead class="bg-slate-50 text-slate-500 text-[10px] font-black uppercase tracking-widest border-b border-slate-200">
+                                <tr>
+                                    <th class="px-8 py-6">Borrow ID</th>
+                                    <th class="py-6">ชื่ออุปกรณ์</th>
+                                    <th class="py-6">ผู้ยืม / แผนก</th>
+                                    <th class="py-6 text-center">จำนวน</th>
+                                    <th class="py-6">วันที่ยืม</th>
+                                    <th class="py-6">สถานะ</th>
+                                    <th class="text-center px-8 py-6">จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="borrow-table-body" class="divide-y divide-slate-100 text-sm"></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
@@ -803,6 +841,14 @@
             
             <div class="space-y-4 mb-6">
                 <div>
+                    <label class="text-[10px] font-black text-slate-400 uppercase ml-2 mb-1 block">ประเภทงาน</label>
+                    <select id="edit-type" class="w-full px-4 py-3 bg-slate-50 rounded-xl font-bold text-sm outline-none border border-slate-200 focus:border-blue-500 focus:bg-white shadow-sm">
+                        <option value="ซ่อม">ซ่อมบำรุง (Repair)</option>
+                        <option value="ติดตั้ง">งานติดตั้ง (Install)</option>
+                        <option value="ตรวจเช็ค">ตรวจเช็ค (MA)</option>
+                    </select>
+                </div>
+                <div>
                     <label class="text-[10px] font-black text-slate-400 uppercase ml-2 mb-1 block">วันที่นัดหมาย</label>
                     <input type="date" id="edit-date" class="w-full px-4 py-3 bg-slate-50 rounded-xl font-bold text-sm outline-none border border-slate-200 focus:border-blue-500 focus:bg-white shadow-sm">
                 </div>
@@ -832,11 +878,11 @@
             <div class="space-y-5">
                 <div>
                     <label class="text-[10px] font-black text-slate-400 uppercase ml-2 mb-1 block">ชื่ออุปกรณ์ / รุ่น</label>
-                    <input type="text" id="stk-name" class="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold outline-none focus:bg-white focus:border-blue-500 transition-all shadow-sm">
+                    <input type="text" id="stk-name" autocomplete="off" class="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold outline-none focus:bg-white focus:border-blue-500 transition-all shadow-sm">
                 </div>
                 <div>
                     <label class="text-[10px] font-black text-slate-400 uppercase ml-2 mb-1 block">ยี่ห้อ (Brand)</label>
-                    <input type="text" id="stk-brand" class="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold outline-none focus:bg-white focus:border-blue-500 transition-all shadow-sm">
+                    <input type="text" id="stk-brand" autocomplete="off" class="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold outline-none focus:bg-white focus:border-blue-500 transition-all shadow-sm">
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
@@ -937,29 +983,95 @@
         </table>
     </div>
 
+    <!-- ==================== FIREBASE CLOUD STORAGE (ระบบบันทึกข้อมูล) ==================== -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // ตั้งค่าการเชื่อมต่อฐานข้อมูล
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { projectId: "demo-cctv-core" };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'cctv-core-app';
+
+        let currentUser = null;
+
+        // เข้าสู่ระบบฐานข้อมูล
+        const initAuth = async () => {
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                await signInWithCustomToken(auth, __initial_auth_token);
+            } else {
+                await signInAnonymously(auth);
+            }
+        };
+        initAuth();
+
+        onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+            if (user) setupListeners();
+        });
+
+        // ดึงข้อมูลแบบ Real-time
+        function setupListeners() {
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'repairs'), (snapshot) => {
+                window.dataList = [];
+                snapshot.forEach(doc => window.dataList.push(doc.data()));
+                if(window.renderReportTable) { window.renderReportTable(); window.updateStats(); window.updateMarkers(); }
+            }, (e) => console.error(e));
+
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'installations'), (snapshot) => {
+                window.installJobs = [];
+                snapshot.forEach(doc => window.installJobs.push(doc.data()));
+                if(window.renderInstallTable) { window.renderInstallTable(); window.updateStats(); }
+            }, (e) => console.error(e));
+
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'stock'), (snapshot) => {
+                window.stockItems = [];
+                snapshot.forEach(doc => window.stockItems.push(doc.data()));
+                if(window.renderStock) window.renderStock();
+            }, (e) => console.error(e));
+
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'locations'), (snapshot) => {
+                window.locationsDB = [];
+                snapshot.forEach(doc => window.locationsDB.push(doc.data()));
+                if(window.renderLocations) { window.renderLocations(); window.updateMarkers(); }
+            }, (e) => console.error(e));
+
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'borrows'), (snapshot) => {
+                window.borrowRecords = [];
+                snapshot.forEach(doc => window.borrowRecords.push(doc.data()));
+                if(window.renderBorrowTable) window.renderBorrowTable();
+            }, (e) => console.error(e));
+        }
+
+        // ฟังก์ชันสั่งเซฟ/ลบ เข้าคลาวด์
+        window.dbOp = {
+            saveRepair: async (data) => { if(currentUser) await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'repairs', data.id), data); },
+            deleteRepair: async (id) => { if(currentUser) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'repairs', id)); },
+            saveInstall: async (data) => { if(currentUser) await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'installations', data.id), data); },
+            deleteInstall: async (id) => { if(currentUser) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'installations', id)); },
+            saveStock: async (data) => { if(currentUser) await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'stock', data.id), data); },
+            deleteStock: async (id) => { if(currentUser) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'stock', id)); },
+            saveLocation: async (data) => { if(currentUser) await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'locations', data.id), data); },
+            deleteLocation: async (id) => { if(currentUser) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'locations', id)); },
+            saveBorrow: async (data) => { if(currentUser) await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'borrows', data.id), data); },
+            deleteBorrow: async (id) => { if(currentUser) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'borrows', id)); }
+        };
+    </script>
+
     <script>
         // --- STATE ---
         const todayObj = new Date();
         const todayStr = todayObj.toISOString().split('T')[0];
         
-        let dataList = [
-            { id: 'REP-3036', date: todayStr, createdAt: new Date().toISOString(), subject: 'กล้องไม่ติด ภาพลายเป็นบางช่วง', location: 'สำนักงานใหญ่ (HQ)', reporter: 'สมชาย', dept: '081-xxx-xxxx', type: 'ซ่อม', status: 'รอดำเนินการ', lat: 13.7563, lng: 100.5018, assignedTech: '-', equipment: 'รอเบิกอะไหล่', history: [{time: new Date().toLocaleTimeString(), action: 'สร้างใบงานเข้าระบบ', by: 'Admin'}] }
-        ];
-
-        let installJobs = [
-            { id: 'INS-9842', datetime: todayStr + 'T09:00', subject: 'ติดตั้งกล้องจุดเพิ่ม 2 ตัวบริเวณสระน้ำ', customer: 'คุณวิภา', phone: '082-xxx-xxxx', status: 'กำลังทำ', image: '', history: [] }
-        ];
-
-        let stockItems = [
-            { id: 'STK-001', name: 'Dome IP Camera 4MP', qty: 15, cat: 'Hardware', brand: 'Hikvision', status: 'Available' },
-            { id: 'STK-002', name: 'NVR 32CH Enterprise', qty: 2, cat: 'Hardware', brand: 'Dahua', status: 'Low Stock' },
-            { id: 'STK-003', name: 'CAT6 Outdoor Cable', qty: 12, cat: 'Cables', brand: 'Link', status: 'Available' }
-        ];
-
-        let locationsDB = [
-            { id: 'LOC-01', name: 'สำนักงานใหญ่ (HQ)', lat: 13.7563, lng: 100.5018 },
-            { id: 'LOC-02', name: 'คลังสินค้า บางนา', lat: 13.6682, lng: 100.6140 }
-        ];
+        // เคลียร์ข้อมูลจำลองออก เพื่อรอรับข้อมูลจริงจาก Cloud
+        var dataList = [];
+        var installJobs = [];
+        var stockItems = [];
+        var locationsDB = [];
+        var borrowRecords = [];
 
         let currentActiveWO = null;
         let currentImageBase64 = ''; 
@@ -1032,6 +1144,7 @@
             renderInstallTable();
             renderStock();
             renderLocations();
+            renderBorrowTable();
             updateStats();
         }
 
@@ -1168,76 +1281,44 @@
         }
 
         // --- INSTALLATIONS CRUD ---
-        function renderInstallTable() {
-            const tbody = document.getElementById('install-table-body');
-            tbody.innerHTML = installJobs.map(item => {
-                const imgTag = item.image ? `<img src="${item.image}" class="w-16 h-16 object-cover rounded-xl border border-slate-200">` : `<div class="w-16 h-16 bg-slate-100 rounded-xl flex items-center justify-center text-slate-300 text-xs font-bold border border-slate-200">No Image</div>`;
-                return `
-                <tr class="hover:bg-slate-50 transition-colors border-b border-slate-100">
-                    <td class="px-8 py-5">
-                        <p class="text-blue-600 font-black text-sm">#${item.id}</p>
-                        <p class="text-[10px] text-slate-400 font-bold uppercase mt-1">${item.datetime.replace('T', ' ')}</p>
-                    </td>
-                    <td class="py-5 pr-4">${imgTag}</td>
-                    <td class="py-5">
-                        <p class="font-bold text-slate-800 leading-tight">${item.subject}</p>
-                    </td>
-                    <td class="py-5">
-                        <div class="flex flex-col items-start gap-1">
-                            <span class="font-bold text-slate-600 text-xs"><i data-lucide="user" class="w-3 h-3 inline"></i> ${item.customer}</span>
-                            <span class="text-xs text-slate-500 font-medium"><i data-lucide="phone" class="w-3 h-3 inline"></i> ${item.phone}</span>
-                        </div>
-                    </td>
-                    <td class="py-5">
-                        <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase ${getStatusColorClass(item.status)}">${item.status}</span>
-                    </td>
-                    <td class="text-center px-8 py-5">
-                        <div class="flex justify-center gap-2">
-                            <button onclick="editInstall('${item.id}')" title="แก้ไขใบงาน" class="p-2.5 bg-white border border-slate-200 text-slate-400 hover:text-blue-600 rounded-xl shadow-sm hover:border-blue-300 transition-all"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
-                            <button onclick="deleteInstall('${item.id}')" title="ลบ" class="p-2.5 bg-white border border-slate-200 text-slate-400 hover:text-red-500 rounded-xl shadow-sm hover:border-red-300 transition-all"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                        </div>
-                    </td>
-                </tr>
-            `}).join('');
-            lucide.createIcons();
-        }
-
-        function openInstallModal() {
-            document.getElementById('ins-id').value = '';
-            document.getElementById('install-modal-title').innerText = "เพิ่มงานติดตั้งใหม่ (Installation)";
-            document.getElementById('ins-datetime').value = todayStr + 'T09:00';
-            document.getElementById('ins-detail').value = '';
-            document.getElementById('ins-reporter').value = '';
-            document.getElementById('ins-customer').value = '';
-            document.getElementById('ins-status').value = 'รอดำเนินการ';
-            clearImage();
-            document.getElementById('modal-install').classList.add('active');
-        }
-
-        function editInstall(id) {
-            const ins = installJobs.find(x => x.id === id);
-            if(!ins) return;
-            document.getElementById('install-modal-title').innerText = "แก้ไขข้อมูลงานติดตั้ง";
-            document.getElementById('ins-id').value = ins.id;
-            document.getElementById('ins-datetime').value = ins.datetime;
-            document.getElementById('ins-detail').value = ins.subject;
-            document.getElementById('ins-reporter').value = ins.reporter || '';
-            document.getElementById('ins-customer').value = ins.customer + ' ' + ins.phone;
-            document.getElementById('ins-status').value = ins.status;
-            
-            if(ins.image) {
-                currentImageBase64 = ins.image;
-                document.getElementById('ins-img-preview').src = currentImageBase64;
-                document.getElementById('ins-img-preview').classList.remove('hidden');
-                document.getElementById('ins-upload-placeholder').classList.add('hidden');
+        function openInstallModal(id = null) {
+            if(id) {
+                const job = installJobs.find(x => x.id === id);
+                if(!job) return;
+                document.getElementById('ins-id').value = job.id;
+                document.getElementById('ins-datetime').value = job.datetime;
+                document.getElementById('ins-detail').value = job.subject;
+                document.getElementById('ins-reporter').value = job.reporter;
+                
+                // ใช้การเช็คว่ามีเบอร์โทรไหม ถ้าไม่มีก็ดึงแค่ชื่อ ไม่ให้ขึ้น undefined
+                const custStr = job.customer + (job.phone && job.phone !== '-' ? ' ' + job.phone : '');
+                document.getElementById('ins-customer').value = custStr;
+                
+                document.getElementById('ins-status').value = job.status;
+                
+                currentImageBase64 = job.image || '';
+                if(currentImageBase64) {
+                    document.getElementById('ins-img-preview').src = currentImageBase64;
+                    document.getElementById('ins-img-preview').classList.remove('hidden');
+                    document.getElementById('ins-upload-placeholder').classList.add('hidden');
+                } else {
+                    clearImage();
+                }
+                document.getElementById('install-modal-title').innerText = "แก้ไขงานติดตั้ง";
             } else {
+                document.getElementById('ins-id').value = '';
+                document.getElementById('ins-datetime').value = '';
+                document.getElementById('ins-detail').value = '';
+                document.getElementById('ins-reporter').value = '';
+                document.getElementById('ins-customer').value = '';
+                document.getElementById('ins-status').value = 'รอดำเนินการ';
                 clearImage();
+                document.getElementById('install-modal-title').innerText = "เพิ่มงานติดตั้งใหม่ (Installation)";
             }
-            
             document.getElementById('modal-install').classList.add('active');
         }
 
-        function saveInstall() {
+        async function saveInstall() {
             const id = document.getElementById('ins-id').value;
             const detail = document.getElementById('ins-detail').value;
             const customerStr = document.getElementById('ins-customer').value;
@@ -1253,33 +1334,55 @@
                 subject: detail,
                 reporter: document.getElementById('ins-reporter').value,
                 customer: customerStr.split(' ')[0] || customerStr,
-                phone: customerStr.split(' ')[1] || '-',
+                phone: customerStr.split(' ').slice(1).join(' ') || '-',
                 status: document.getElementById('ins-status').value,
                 image: currentImageBase64,
                 history: []
             };
 
-            if(id) {
-                const idx = installJobs.findIndex(x => x.id === id);
-                if(idx > -1) {
-                    data.history = installJobs[idx].history;
-                    installJobs[idx] = data;
-                }
-            } else {
-                installJobs.unshift(data);
-            }
-
+            if(window.dbOp) await window.dbOp.saveInstall(data);
             closeModal('modal-install');
-            renderInstallTable();
-            updateStats();
         }
 
-        function deleteInstall(id) {
+        async function deleteInstall(id) {
             if(confirm('ลบงานติดตั้งนี้อย่างถาวร?')) {
-                installJobs = installJobs.filter(x => x.id !== id);
-                renderInstallTable();
-                updateStats();
+                if(window.dbOp) await window.dbOp.deleteInstall(id);
             }
+        }
+
+        function renderInstallTable() {
+            const tbody = document.getElementById('install-table-body');
+            if(!tbody) return;
+            tbody.innerHTML = installJobs.map(item => `
+                <tr class="hover:bg-slate-50 transition-colors group border-b border-slate-100 cursor-pointer" onclick="openInstallModal('${item.id}')">
+                    <td class="px-8 md:px-10 py-6">
+                        <p class="text-blue-600 font-black text-base md:text-lg">#${item.id}</p>
+                        <p class="text-[9px] text-slate-400 font-bold uppercase mt-1">${formatThaiDate(item.datetime ? item.datetime.split('T')[0] : '')}</p>
+                    </td>
+                    <td class="py-6">
+                        ${item.image ? `<img src="${item.image}" class="w-16 h-16 object-cover rounded-xl shadow-sm border border-slate-200" alt="Job Image">` : `<div class="w-16 h-16 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400"><i data-lucide="image-off" class="w-5 h-5"></i></div>`}
+                    </td>
+                    <td class="py-6 pr-4">
+                        <p class="font-bold text-slate-800 leading-tight">${item.subject}</p>
+                    </td>
+                    <td class="py-6">
+                        <p class="font-bold text-slate-600"><i data-lucide="user" class="w-3 h-3 inline"></i> ${item.customer}</p>
+                        <p class="text-[10px] text-slate-400 mt-1"><i data-lucide="phone" class="w-3 h-3 inline"></i> ${item.phone}</p>
+                    </td>
+                    <td class="py-6">
+                        <div class="flex items-center gap-3">
+                            <span class="w-2.5 h-2.5 rounded-full shadow-sm" style="background-color: ${getStatusColor(item.status)}"></span>
+                            <span class="text-[10px] font-black text-slate-800 uppercase tracking-tighter">${item.status}</span>
+                        </div>
+                    </td>
+                    <td class="text-center no-print px-8 md:px-10 py-6" onclick="event.stopPropagation()">
+                        <div class="flex flex-col sm:flex-row items-center justify-center gap-2">
+                            <button onclick="deleteInstall('${item.id}')" title="ลบงานติดตั้ง" class="p-3 bg-white border border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-300 rounded-xl transition-all shadow-sm"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+            if(typeof lucide !== 'undefined') lucide.createIcons();
         }
 
         // --- EXPORT FUNCTIONS (CSV / PDF BULK) ---
@@ -1306,6 +1409,11 @@
                 csvContent += "Location ID,Name,Latitude,Longitude\n";
                 locationsDB.forEach(row => { csvContent += `"${row.id}","${row.name}","${row.lat}","${row.lng}"\n`; });
                 filename = "Location_Database.csv";
+            }
+            else if (type === 'borrows') {
+                csvContent += "Borrow ID,Item Name,Borrower,Quantity,Date,Status\n";
+                borrowRecords.forEach(row => { csvContent += `"${row.id}","${row.itemName}","${row.borrower}","${row.qty}","${row.date}","${row.status}"\n`; });
+                filename = "Borrow_Records.csv";
             }
 
             const encodedUri = encodeURI(csvContent);
@@ -1353,7 +1461,7 @@
 
 
         // --- REPAIRS (TICKETS) CRUD ---
-        function saveNewRepair(source = 'admin') {
+        async function saveNewRepair(source = 'admin') {
             const prefix = source === 'admin' ? 'in-' : 'pub-';
             const typeVal = document.getElementById(`${prefix}type`).value;
             const subject = document.getElementById(`${prefix}subject`).value;
@@ -1362,50 +1470,53 @@
             if(!subject) return alert('กรุณาระบุรายละเอียดงานให้ชัดเจน');
             
             const dateVal = source === 'admin' ? document.getElementById('in-date').value : todayStr;
-            const id = 'REP-' + Math.floor(1000 + Math.random() * 9000);
+            let id = document.getElementById('rep-id') ? document.getElementById('rep-id').value : '';
+            
+            if(!id || source === 'public') {
+                id = 'REP-' + Math.floor(1000 + Math.random() * 9000);
+            }
+            
+            let oldHistory = [];
+            let oldStatus = 'รอดำเนินการ';
+            let oldTech = '-';
+            let oldCreatedAt = new Date().toISOString();
+
+            if(source === 'admin' && document.getElementById('rep-id').value) {
+                const existing = dataList.find(x => x.id === id);
+                if(existing) {
+                    oldHistory = existing.history || [];
+                    oldStatus = existing.status;
+                    oldTech = existing.assignedTech;
+                    oldCreatedAt = existing.createdAt;
+                }
+            } else {
+                oldHistory = [{time: new Date().toLocaleTimeString(), action: 'เปิดใบงานใหม่', by: source==='admin'?'Admin':'ลูกค้า'}];
+            }
             
             const newData = {
                 id: id,
                 date: dateVal,
-                createdAt: new Date().toISOString(),
+                createdAt: oldCreatedAt,
                 type: typeVal,
                 subject: subject,
                 location: document.getElementById(`${prefix}location`).value || 'ไม่ได้ระบุสถานที่ชัดเจน',
                 reporter: document.getElementById(`${prefix}reporter`).value || 'ผู้แจ้งทั่วไป',
                 dept: document.getElementById(`${prefix}dept`).value || '-',
-                status: 'รอดำเนินการ',
+                status: oldStatus,
                 lat: parseFloat(document.getElementById(`${prefix}lat`).value) || 13.7563,
                 lng: parseFloat(document.getElementById(`${prefix}lng`).value) || 100.5018,
-                assignedTech: '-',
+                assignedTech: oldTech,
                 equipment: equipVal,
-                history: [{time: new Date().toLocaleTimeString(), action: 'เปิดใบงานใหม่', by: source==='admin'?'Admin':'ลูกค้า'}]
+                history: oldHistory
             };
 
-            if(source === 'admin') {
-                const editId = document.getElementById('rep-id').value;
-                if(editId) {
-                    const idx = dataList.findIndex(x => x.id === editId);
-                    if(idx > -1) {
-                        newData.id = editId;
-                        newData.createdAt = dataList[idx].createdAt;
-                        newData.status = dataList[idx].status;
-                        newData.assignedTech = dataList[idx].assignedTech;
-                        newData.history = dataList[idx].history;
-                        dataList[idx] = newData;
-                    }
-                } else {
-                    dataList.unshift(newData);
-                }
-            } else {
-                 dataList.unshift(newData);
-            }
+            if(window.dbOp) await window.dbOp.saveRepair(newData);
             
             [`${prefix}subject`,`${prefix}location`,`${prefix}reporter`,`${prefix}dept`,`${prefix}lat`,`${prefix}lng`].forEach(x => {if(document.getElementById(x)) document.getElementById(x).value=''});
             if(source === 'admin') document.getElementById('in-equipment').value = '';
             
             if(source === 'admin') {
                 closeModal('modal-repair');
-                renderAll();
             } else {
                 closeModal('modal-public-repair');
                 alert(`ระบบได้รับข้อมูลการแจ้งของคุณแล้ว!\nรหัสอ้างอิงสำหรับติดตามสถานะคือ: ${id}`);
@@ -1451,7 +1562,7 @@
                     </td>
                 </tr>
             `}).join('');
-            lucide.createIcons();
+            if(typeof lucide !== 'undefined') lucide.createIcons();
         }
 
         function editRepairFull(id) {
@@ -1541,7 +1652,7 @@
             document.getElementById('wo-history').innerHTML = histHtml;
 
             document.getElementById('modal-work-order').classList.add('active');
-            lucide.createIcons();
+            if(typeof lucide !== 'undefined') lucide.createIcons();
         }
 
         function openEditStatusOnly() {
@@ -1551,12 +1662,11 @@
             }
         }
 
-        function deleteTicketFromWO() {
+        async function deleteTicketFromWO() {
             if(!currentActiveWO) return;
             if(confirm('ยืนยันการลบใบงานนี้อย่างถาวร?')) {
-                dataList = dataList.filter(x => x.id !== currentActiveWO.id);
+                if(window.dbOp) await window.dbOp.deleteRepair(currentActiveWO.id);
                 closeModal('modal-work-order');
-                renderAll();
             }
         }
 
@@ -1644,7 +1754,7 @@
                     <div class="flex justify-between items-start mb-4">
                         <span class="px-3 py-1 bg-slate-100 text-slate-600 text-[10px] font-black uppercase rounded-lg shadow-sm">${item.cat}</span>
                         <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onclick="editStock('${item.id}')" class="p-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl transition-colors"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                            <button onclick="openStockModal('${item.id}')" class="p-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl transition-colors"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
                             <button onclick="deleteStock('${item.id}')" class="p-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-xl transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                         </div>
                     </div>
@@ -1670,7 +1780,7 @@
                     </div>
                 </div>
             `).join('');
-            lucide.createIcons();
+            if(typeof lucide !== 'undefined') lucide.createIcons();
         }
 
         function openStockModal(id = null) {
@@ -1693,7 +1803,8 @@
             document.getElementById('modal-stock').classList.add('active');
         }
 
-        function saveStock() {
+        // --- STOCK (คลังพัสดุ) ---
+        async function saveStock() {
             const id = document.getElementById('edit-stk-id').value;
             const name = document.getElementById('stk-name').value;
             const brand = document.getElementById('stk-brand').value;
@@ -1702,30 +1813,28 @@
 
             if(!name) return alert('กรุณาระบุชื่ออุปกรณ์');
 
-            if(id) {
-                const idx = stockItems.findIndex(x => x.id === id);
-                stockItems[idx] = { ...stockItems[idx], name, brand, cat, qty };
-            } else {
-                stockItems.push({ id: 'STK-' + Date.now(), name, brand, cat, qty, status: 'Available' });
-            }
+            const data = {
+                id: id ? id : 'STK-' + Date.now(),
+                name, brand, cat, qty, status: 'Available'
+            };
+
+            if(window.dbOp) await window.dbOp.saveStock(data);
             closeModal('modal-stock');
-            renderStock();
         }
 
-        function deleteStock(id) {
+        async function deleteStock(id) {
             if(confirm('คุณยืนยันที่จะลบอุปกรณ์นี้ออกจากระบบใช่หรือไม่?')) {
-                stockItems = stockItems.filter(x => x.id !== id);
-                renderStock();
+                if(window.dbOp) await window.dbOp.deleteStock(id);
             }
         }
 
-        function adjustStock(id, amount) {
-            const idx = stockItems.findIndex(x => x.id === id);
-            if(idx > -1) {
-                const newQty = stockItems[idx].qty + amount;
+        async function adjustStock(id, amount) {
+            const item = stockItems.find(x => x.id === id);
+            if(item) {
+                const newQty = item.qty + amount;
                 if(newQty < 0) return alert('จำนวนสินค้าไม่เพียงพอ');
-                stockItems[idx].qty = newQty;
-                renderStock();
+                item.qty = newQty;
+                if(window.dbOp) await window.dbOp.saveStock(item);
             }
         }
 
@@ -1734,32 +1843,122 @@
             if(!item || item.qty <= 0) return alert('อุปกรณ์ชิ้นนี้หมดคลังชั่วคราว ไม่สามารถยืมได้');
             
             currentBorrowId = id;
-            document.getElementById('borrow-item-name').innerText = `อุปกรณ์: ${item.name}`;
+            
+            // นำรายการพัสดุมาใส่ใน Dropdown ให้เลือกได้
+            const select = document.getElementById('borrow-item-select');
+            if(select) {
+                select.innerHTML = stockItems.filter(x => x.qty > 0).map(x => `<option value="${x.id}" ${x.id === id ? 'selected' : ''}>${x.name} (เหลือ ${x.qty})</option>`).join('');
+            }
+            
             document.getElementById('borrow-qty').value = 1;
             document.getElementById('borrow-qty').max = item.qty;
             document.getElementById('borrow-person').value = '';
             document.getElementById('modal-borrow').classList.add('active');
         }
 
-        function confirmBorrow() {
+        function updateBorrowMax() {
+            const select = document.getElementById('borrow-item-select');
+            currentBorrowId = select.value;
+            const item = stockItems.find(x => x.id === currentBorrowId);
+            if(item) {
+                document.getElementById('borrow-qty').max = item.qty;
+                if(parseInt(document.getElementById('borrow-qty').value) > item.qty) {
+                    document.getElementById('borrow-qty').value = item.qty;
+                }
+            }
+        }
+
+        async function confirmBorrow() {
             const qty = parseInt(document.getElementById('borrow-qty').value);
             const person = document.getElementById('borrow-person').value.trim();
             
             if(!person) return alert('กรุณาระบุชื่อผู้ยืมให้ชัดเจน');
             if(isNaN(qty) || qty <= 0) return alert('กรุณาระบุจำนวนที่ถูกต้อง');
             
-            const idx = stockItems.findIndex(x => x.id === currentBorrowId);
-            if(idx > -1) {
-                if(qty > stockItems[idx].qty) return alert('จำนวนอุปกรณ์ในคลังไม่พอให้ยืม');
+            const item = stockItems.find(x => x.id === currentBorrowId);
+            if(item) {
+                if(qty > item.qty) return alert('จำนวนอุปกรณ์ในคลังไม่พอให้ยืม');
                 
-                stockItems[idx].qty -= qty;
-                alert(`✅ ดำเนินการยืมสำเร็จ!\nคุณ ${person} ได้ทำการยืม ${stockItems[idx].name} จำนวน ${qty} ชิ้น\n(ระบบได้ตัดสต๊อกเรียบร้อยแล้ว แนะนำให้นำข้อมูลการเบิกนี้ไปใส่ในรายละเอียดของใบงานซ่อมด้วยครับ)`);
+                // 1. ตัดสต๊อกจากคลังหลัก
+                item.qty -= qty;
+                if(window.dbOp) await window.dbOp.saveStock(item);
                 
+                // 2. สร้างประวัติการยืมในตารางใหม่
+                const borrowData = {
+                    id: 'BRW-' + Date.now(),
+                    itemId: item.id,
+                    itemName: item.name,
+                    borrower: person,
+                    qty: qty,
+                    date: todayStr,
+                    status: 'กำลังยืม'
+                };
+                if(window.dbOp) await window.dbOp.saveBorrow(borrowData);
+                
+                alert(`✅ ดำเนินการยืมสำเร็จ!\nคุณ ${person} ได้ทำการยืม ${item.name} จำนวน ${qty} ชิ้น\nระบบได้บันทึกและส่งข้อมูลไปที่หน้า "ยืม-คืนพัสดุ" แล้ว`);
                 closeModal('modal-borrow');
-                renderStock();
+                switchTab('borrow'); // เปลี่ยนหน้าไปยังประวัติการยืมอัตโนมัติ
             }
         }
 
+        // --- BORROW / RETURN FUNCTIONS ---
+        function renderBorrowTable() {
+            const tbody = document.getElementById('borrow-table-body');
+            if(!tbody) return;
+
+            // เรียงลำดับให้รายการที่ "กำลังยืม" ขึ้นก่อน
+            const sortedRecords = [...borrowRecords].sort((a, b) => {
+                if(a.status === 'กำลังยืม' && b.status !== 'กำลังยืม') return -1;
+                if(a.status !== 'กำลังยืม' && b.status === 'กำลังยืม') return 1;
+                return new Date(b.date) - new Date(a.date);
+            });
+
+            tbody.innerHTML = sortedRecords.map(b => `
+                <tr class="hover:bg-slate-50 transition-colors border-b border-slate-50">
+                    <td class="px-8 py-5 text-blue-600 font-black text-sm">#${b.id}</td>
+                    <td class="py-5 font-bold text-slate-800">${b.itemName}</td>
+                    <td class="py-5 font-bold text-slate-600"><i data-lucide="user" class="w-3 h-3 inline"></i> ${b.borrower}</td>
+                    <td class="py-5 text-center font-black">${b.qty}</td>
+                    <td class="py-5 text-xs">${formatThaiDate(b.date)}</td>
+                    <td class="py-5">
+                        <span class="px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest ${b.status === 'คืนแล้ว' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-amber-50 text-amber-600 border border-amber-200'}">
+                            ${b.status}
+                        </span>
+                    </td>
+                    <td class="text-center px-8 py-5">
+                        ${b.status === 'กำลังยืม' 
+                            ? `<button onclick="returnBorrow('${b.id}')" class="px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-slate-800 transition-all shadow-md hover:-translate-y-0.5">คืนเข้าคลัง</button>` 
+                            : `<span class="text-xs text-slate-400 font-bold"><i data-lucide="check-circle-2" class="w-4 h-4 inline text-emerald-500"></i> เสร็จสิ้น</span>`
+                        }
+                    </td>
+                </tr>
+            `).join('');
+            if(typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        async function returnBorrow(id) {
+            if(!confirm('ยืนยันว่าได้รับอุปกรณ์คืนครบถ้วนและต้องการนำกลับเข้าสต๊อกใช่หรือไม่?')) return;
+            const b = borrowRecords.find(x => x.id === id);
+            
+            if(b && b.status === 'กำลังยืม') {
+                // 1. เพิ่มของกลับเข้าคลัง (ค้นหาจาก ID หรือ ชื่อ เพื่อป้องกันกรณีหาข้อมูลเก่าไม่เจอ)
+                let item = stockItems.find(x => x.id === b.itemId);
+                if(!item) item = stockItems.find(x => x.name === b.itemName);
+
+                if(item) {
+                    // แปลงเป็นตัวเลขก่อนบวก ป้องกันบัคจำนวนอุปกรณ์ต่อกันเป็นข้อความ
+                    item.qty = parseInt(item.qty) + parseInt(b.qty);
+                    if(window.dbOp) await window.dbOp.saveStock(item);
+                    alert(`✅ รับอุปกรณ์ "${b.itemName}" จำนวน ${b.qty} ชิ้น กลับเข้าคลังเรียบร้อยแล้ว`);
+                } else {
+                    alert('⚠️ คำเตือน: ไม่พบสินค้านี้ในคลัง (อาจถูกลบไปแล้ว) ระบบจะเปลี่ยนแค่สถานะการยืมเป็น "คืนแล้ว" เท่านั้น');
+                }
+                
+                // 2. อัปเดตสถานะประวัติการยืม
+                b.status = 'คืนแล้ว';
+                if(window.dbOp) await window.dbOp.saveBorrow(b);
+            }
+        }
 
         // --- LOCATIONS ---
         function renderLocations() {
@@ -1777,7 +1976,7 @@
                     </td>
                 </tr>
             `).join('');
-            lucide.createIcons();
+            if(typeof lucide !== 'undefined') lucide.createIcons();
         }
 
         function openLocationModal() {
@@ -1841,7 +2040,7 @@
             }, 300);
         }
 
-        function saveLocation() {
+        async function saveLocation() {
             const id = document.getElementById('loc-id').value.trim() || 'LOC-' + Math.floor(1000 + Math.random() * 9000);
             const name = document.getElementById('loc-name').value;
             const lat = parseFloat(document.getElementById('loc-lat').value) || 0;
@@ -1849,23 +2048,15 @@
             
             if(!name) return;
 
-            const existingIdx = locationsDB.findIndex(x => x.id === id);
-            if(existingIdx >= 0) {
-                locationsDB[existingIdx] = { id, name, lat, lng };
-            } else {
-                locationsDB.push({ id, name, lat, lng });
-            }
+            const data = { id, name, lat, lng };
+            if(window.dbOp) await window.dbOp.saveLocation(data);
             
             closeModal('modal-location');
-            renderLocations();
-            updateMarkers(); 
         }
 
-        function deleteLocation(id) {
+        async function deleteLocation(id) {
             if(confirm('ลบจุดติดตั้งนี้ออกจากฐานข้อมูล? (หากลบแล้ว ประวัติเดิมจะยังคงอยู่)')) {
-                locationsDB = locationsDB.filter(x => x.id !== id);
-                renderLocations();
-                updateMarkers();
+                if(window.dbOp) await window.dbOp.deleteLocation(id);
             }
         }
 
@@ -1914,12 +2105,14 @@
             if(id === 'stock') renderStock();
             if(id === 'locations') renderLocations();
             if(id === 'installations') renderInstallTable();
+            if(id === 'borrow') renderBorrowTable();
         }
 
         function openEditStatus(id) {
             document.getElementById('edit-id').value = id;
             const ticket = dataList.find(t => t.id === id);
             
+            document.getElementById('edit-type').value = ticket.type || 'ซ่อม';
             document.getElementById('edit-date').value = ticket.date; 
             document.getElementById('edit-tech').value = ticket.assignedTech !== '-' ? ticket.assignedTech : '';
             
@@ -1934,26 +2127,36 @@
             `).join('');
             if(document.getElementById('modal-work-order')) document.getElementById('modal-work-order').classList.remove('active');
             document.getElementById('modal-edit').classList.add('active');
-            lucide.createIcons();
+            if(typeof lucide !== 'undefined') lucide.createIcons();
         }
 
-        function updateStatus(s) {
+        async function updateStatus(s) {
             const id = document.getElementById('edit-id').value;
             const newDate = document.getElementById('edit-date').value;
             const newTech = document.getElementById('edit-tech').value || '-';
+            const newType = document.getElementById('edit-type').value;
             
-            dataList = dataList.map(x => {
-                if(x.id === id) {
-                    let newHist = [...x.history, { time: new Date().toLocaleTimeString(), action: `อัปเดตสถานะเป็น ${s}`, by: 'Admin' }];
-                    if(newTech !== x.assignedTech) newHist.push({ time: new Date().toLocaleTimeString(), action: `มอบหมายงานให้ ${newTech}`, by: 'Admin' });
-                    return {...x, status: s, date: newDate, assignedTech: newTech, history: newHist};
-                }
-                return x;
-            });
+            const ticket = dataList.find(x => x.id === id);
+            if(ticket) {
+                let newHist = [...ticket.history];
+                
+                let actionText = `อัปเดตสถานะเป็น ${s}`;
+                if(newType !== ticket.type) actionText += ` (เปลี่ยนงานเป็น ${newType})`;
+                
+                newHist.push({ time: new Date().toLocaleTimeString(), action: actionText, by: 'Admin' });
+                if(newTech !== ticket.assignedTech) newHist.push({ time: new Date().toLocaleTimeString(), action: `มอบหมายงานให้ ${newTech}`, by: 'Admin' });
+                
+                ticket.status = s;
+                ticket.date = newDate;
+                ticket.assignedTech = newTech;
+                ticket.type = newType;
+                ticket.history = newHist;
+
+                if(window.dbOp) await window.dbOp.saveRepair(ticket);
+            }
             
             closeModal('modal-edit');
             if(currentActiveWO) openWorkOrder(id); 
-            renderAll();
         }
 
         function getStatusColorClass(s) {
@@ -2011,7 +2214,7 @@
         }
 
         window.onload = () => {
-            lucide.createIcons();
+            if(typeof lucide !== 'undefined') lucide.createIcons();
             // Start app at public view default
             document.getElementById('main-app').classList.add('hidden');
             document.getElementById('login-page').classList.add('hidden');
