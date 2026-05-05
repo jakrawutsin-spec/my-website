@@ -996,24 +996,7 @@
         const db = getFirestore(app);
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'cctv-core-app';
 
-        let currentUser = null;
-
-        // เข้าสู่ระบบฐานข้อมูล
-        const initAuth = async () => {
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                await signInWithCustomToken(auth, __initial_auth_token);
-            } else {
-                await signInAnonymously(auth);
-            }
-        };
-        initAuth();
-
-        onAuthStateChanged(auth, (user) => {
-            currentUser = user;
-            if (user) setupListeners();
-        });
-
-        // ดึงข้อมูลแบบ Real-time
+        // ดึงข้อมูลแบบ Real-time (ทำงานทันทีที่เปิดเว็บ ไม่ต้องรอ Auth)
         function setupListeners() {
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'repairs'), (snapshot) => {
                 window.dataList = [];
@@ -1046,18 +1029,31 @@
             }, (e) => console.error(e));
         }
 
-        // ฟังก์ชันสั่งเซฟ/ลบ เข้าคลาวด์
+        // เริ่มดึงข้อมูลทันที
+        setupListeners();
+
+        // เข้าสู่ระบบฐานข้อมูล (เบื้องหลัง)
+        const initAuth = async () => {
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                await signInWithCustomToken(auth, __initial_auth_token);
+            } else {
+                await signInAnonymously(auth);
+            }
+        };
+        initAuth();
+
+        // ฟังก์ชันสั่งเซฟ/ลบ เข้าคลาวด์ (ตัดเงื่อนไข if(currentUser) ออกเพื่อให้คิวคำสั่งเซฟทำงานได้ 100%)
         window.dbOp = {
-            saveRepair: async (data) => { if(currentUser) await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'repairs', data.id), data); },
-            deleteRepair: async (id) => { if(currentUser) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'repairs', id)); },
-            saveInstall: async (data) => { if(currentUser) await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'installations', data.id), data); },
-            deleteInstall: async (id) => { if(currentUser) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'installations', id)); },
-            saveStock: async (data) => { if(currentUser) await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'stock', data.id), data); },
-            deleteStock: async (id) => { if(currentUser) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'stock', id)); },
-            saveLocation: async (data) => { if(currentUser) await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'locations', data.id), data); },
-            deleteLocation: async (id) => { if(currentUser) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'locations', id)); },
-            saveBorrow: async (data) => { if(currentUser) await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'borrows', data.id), data); },
-            deleteBorrow: async (id) => { if(currentUser) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'borrows', id)); }
+            saveRepair: async (data) => { await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'repairs', data.id), data); },
+            deleteRepair: async (id) => { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'repairs', id)); },
+            saveInstall: async (data) => { await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'installations', data.id), data); },
+            deleteInstall: async (id) => { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'installations', id)); },
+            saveStock: async (data) => { await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'stock', data.id), data); },
+            deleteStock: async (id) => { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'stock', id)); },
+            saveLocation: async (data) => { await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'locations', data.id), data); },
+            deleteLocation: async (id) => { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'locations', id)); },
+            saveBorrow: async (data) => { await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'borrows', data.id), data); },
+            deleteBorrow: async (id) => { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'borrows', id)); }
         };
     </script>
 
@@ -1066,7 +1062,6 @@
         const todayObj = new Date();
         const todayStr = todayObj.toISOString().split('T')[0];
         
-        // เคลียร์ข้อมูลจำลองออก เพื่อรอรับข้อมูลจริงจาก Cloud
         var dataList = [];
         var installJobs = [];
         var stockItems = [];
@@ -1340,12 +1335,21 @@
                 history: []
             };
 
+            // Optimistic Update สำหรับงานติดตั้ง
+            const existingIdx = installJobs.findIndex(x => x.id === data.id);
+            if(existingIdx >= 0) installJobs[existingIdx] = data;
+            else installJobs.push(data);
+            renderInstallTable();
+
             if(window.dbOp) await window.dbOp.saveInstall(data);
             closeModal('modal-install');
         }
 
         async function deleteInstall(id) {
             if(confirm('ลบงานติดตั้งนี้อย่างถาวร?')) {
+                // Optimistic Delete
+                installJobs = installJobs.filter(x => x.id !== id);
+                renderInstallTable();
                 if(window.dbOp) await window.dbOp.deleteInstall(id);
             }
         }
@@ -1510,18 +1514,26 @@
                 history: oldHistory
             };
 
-            if(window.dbOp) await window.dbOp.saveRepair(newData);
+            // OPTIMISTIC UPDATE: อัปเดตตารางและฐานข้อมูลท้องถิ่นทันที ไม่ต้องรอคลาวด์ตอบกลับ
+            const existingIdx = dataList.findIndex(x => x.id === newData.id);
+            if(existingIdx >= 0) dataList[existingIdx] = newData;
+            else dataList.push(newData);
+
+            // ส่งข้อมูลขึ้น Firebase
+            if(window.dbOp) window.dbOp.saveRepair(newData); // ไม่ต้อง await ปล่อยให้มันทำงานเบื้องหลัง
             
             [`${prefix}subject`,`${prefix}location`,`${prefix}reporter`,`${prefix}dept`,`${prefix}lat`,`${prefix}lng`].forEach(x => {if(document.getElementById(x)) document.getElementById(x).value=''});
             if(source === 'admin') document.getElementById('in-equipment').value = '';
             
             if(source === 'admin') {
                 closeModal('modal-repair');
+                renderReportTable();
+                updateStats();
             } else {
                 closeModal('modal-public-repair');
                 alert(`ระบบได้รับข้อมูลการแจ้งของคุณแล้ว!\nรหัสอ้างอิงสำหรับติดตามสถานะคือ: ${id}`);
                 document.getElementById('track-id').value = id;
-                trackTicket();
+                trackTicket(); // พอกดแล้ว ข้อมูลมีอยู่ใน dataList แล้ว ค้นหาเจอแน่นอน 100%
             }
         }
 
@@ -1665,7 +1677,10 @@
         async function deleteTicketFromWO() {
             if(!currentActiveWO) return;
             if(confirm('ยืนยันการลบใบงานนี้อย่างถาวร?')) {
-                if(window.dbOp) await window.dbOp.deleteRepair(currentActiveWO.id);
+                // Optimistic Delete
+                dataList = dataList.filter(x => x.id !== currentActiveWO.id);
+                renderReportTable();
+                if(window.dbOp) window.dbOp.deleteRepair(currentActiveWO.id);
                 closeModal('modal-work-order');
             }
         }
@@ -1818,23 +1833,36 @@
                 name, brand, cat, qty, status: 'Available'
             };
 
-            if(window.dbOp) await window.dbOp.saveStock(data);
+            // Optimistic Update
+            const existingIdx = stockItems.findIndex(x => x.id === data.id);
+            if(existingIdx >= 0) stockItems[existingIdx] = data;
+            else stockItems.push(data);
+            renderStock();
+
+            if(window.dbOp) window.dbOp.saveStock(data);
             closeModal('modal-stock');
         }
 
         async function deleteStock(id) {
             if(confirm('คุณยืนยันที่จะลบอุปกรณ์นี้ออกจากระบบใช่หรือไม่?')) {
-                if(window.dbOp) await window.dbOp.deleteStock(id);
+                // Optimistic Delete
+                stockItems = stockItems.filter(x => x.id !== id);
+                renderStock();
+                if(window.dbOp) window.dbOp.deleteStock(id);
             }
         }
 
         async function adjustStock(id, amount) {
             const item = stockItems.find(x => x.id === id);
             if(item) {
-                const newQty = item.qty + amount;
+                const newQty = parseInt(item.qty) + parseInt(amount);
                 if(newQty < 0) return alert('จำนวนสินค้าไม่เพียงพอ');
+                
+                // Optimistic Update
                 item.qty = newQty;
-                if(window.dbOp) await window.dbOp.saveStock(item);
+                renderStock();
+
+                if(window.dbOp) window.dbOp.saveStock(item);
             }
         }
 
@@ -1879,11 +1907,8 @@
             if(item) {
                 if(qty > item.qty) return alert('จำนวนอุปกรณ์ในคลังไม่พอให้ยืม');
                 
-                // 1. ตัดสต๊อกจากคลังหลัก
+                // Optimistic Updates
                 item.qty -= qty;
-                if(window.dbOp) await window.dbOp.saveStock(item);
-                
-                // 2. สร้างประวัติการยืมในตารางใหม่
                 const borrowData = {
                     id: 'BRW-' + Date.now(),
                     itemId: item.id,
@@ -1893,7 +1918,14 @@
                     date: todayStr,
                     status: 'กำลังยืม'
                 };
-                if(window.dbOp) await window.dbOp.saveBorrow(borrowData);
+                borrowRecords.push(borrowData);
+                renderStock();
+                renderBorrowTable();
+
+                if(window.dbOp) {
+                    window.dbOp.saveStock(item);
+                    window.dbOp.saveBorrow(borrowData);
+                }
                 
                 alert(`✅ ดำเนินการยืมสำเร็จ!\nคุณ ${person} ได้ทำการยืม ${item.name} จำนวน ${qty} ชิ้น\nระบบได้บันทึกและส่งข้อมูลไปที่หน้า "ยืม-คืนพัสดุ" แล้ว`);
                 closeModal('modal-borrow');
@@ -1941,22 +1973,23 @@
             const b = borrowRecords.find(x => x.id === id);
             
             if(b && b.status === 'กำลังยืม') {
-                // 1. เพิ่มของกลับเข้าคลัง (ค้นหาจาก ID หรือ ชื่อ เพื่อป้องกันกรณีหาข้อมูลเก่าไม่เจอ)
+                // 1. ค้นหาไอเท็มในคลัง
                 let item = stockItems.find(x => x.id === b.itemId);
                 if(!item) item = stockItems.find(x => x.name === b.itemName);
 
                 if(item) {
-                    // แปลงเป็นตัวเลขก่อนบวก ป้องกันบัคจำนวนอุปกรณ์ต่อกันเป็นข้อความ
                     item.qty = parseInt(item.qty) + parseInt(b.qty);
-                    if(window.dbOp) await window.dbOp.saveStock(item);
+                    if(window.dbOp) window.dbOp.saveStock(item);
                     alert(`✅ รับอุปกรณ์ "${b.itemName}" จำนวน ${b.qty} ชิ้น กลับเข้าคลังเรียบร้อยแล้ว`);
                 } else {
                     alert('⚠️ คำเตือน: ไม่พบสินค้านี้ในคลัง (อาจถูกลบไปแล้ว) ระบบจะเปลี่ยนแค่สถานะการยืมเป็น "คืนแล้ว" เท่านั้น');
                 }
                 
-                // 2. อัปเดตสถานะประวัติการยืม
+                // Optimistic Update
                 b.status = 'คืนแล้ว';
-                if(window.dbOp) await window.dbOp.saveBorrow(b);
+                renderBorrowTable();
+                
+                if(window.dbOp) window.dbOp.saveBorrow(b);
             }
         }
 
@@ -2049,14 +2082,23 @@
             if(!name) return;
 
             const data = { id, name, lat, lng };
-            if(window.dbOp) await window.dbOp.saveLocation(data);
-            
+
+            // Optimistic Update
+            const existingIdx = locationsDB.findIndex(x => x.id === data.id);
+            if(existingIdx >= 0) locationsDB[existingIdx] = data;
+            else locationsDB.push(data);
+            renderLocations();
+
+            if(window.dbOp) window.dbOp.saveLocation(data);
             closeModal('modal-location');
         }
 
         async function deleteLocation(id) {
             if(confirm('ลบจุดติดตั้งนี้ออกจากฐานข้อมูล? (หากลบแล้ว ประวัติเดิมจะยังคงอยู่)')) {
-                if(window.dbOp) await window.dbOp.deleteLocation(id);
+                // Optimistic Delete
+                locationsDB = locationsDB.filter(x => x.id !== id);
+                renderLocations();
+                if(window.dbOp) window.dbOp.deleteLocation(id);
             }
         }
 
@@ -2152,7 +2194,9 @@
                 ticket.type = newType;
                 ticket.history = newHist;
 
-                if(window.dbOp) await window.dbOp.saveRepair(ticket);
+                // Optimistic Update
+                renderReportTable();
+                if(window.dbOp) window.dbOp.saveRepair(ticket);
             }
             
             closeModal('modal-edit');
