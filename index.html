@@ -1698,7 +1698,7 @@
         window.openUserModal = function(id = null) {
             var allCbs = document.querySelectorAll('.perm-cb');
             allCbs.forEach(cb => { cb.checked = false; cb.disabled = false; }); 
-            window.clearUserImage(); // ล้างรูปก่อนเปิดฟอร์มทุกครั้ง
+            window.clearUserImage();
             
             if(id) {
                 var usr = usersDB.find(x => x.id === id);
@@ -1709,7 +1709,6 @@
                 document.getElementById('usr-password').value = usr.password;
                 document.getElementById('user-modal-title').innerText = 'แก้ไขข้อมูลผู้ใช้งาน';
                 
-                // ตรวจสอบและแสดงรูปภาพถ้ามี
                 if (usr.image) {
                     window.currentUserImage = usr.image;
                     document.getElementById('usr-img-preview').src = usr.image;
@@ -1753,9 +1752,8 @@
             document.getElementById('modal-user').classList.add('active');
         };
 
-        window.currentUserImage = null; // ตัวแปรเก็บรูปโปรไฟล์ชั่วคราวก่อนกดเซฟ
+        window.currentUserImage = null;
 
-        // ฟังก์ชันจัดการการเลือกรูปโปรไฟล์
         window.handleUserImageUpload = function(event) {
             var file = event.target.files[0];
             if (!file) return;
@@ -1771,7 +1769,6 @@
             reader.readAsDataURL(file);
         };
 
-        // ฟังก์ชันลบรูปโปรไฟล์ออก
         window.clearUserImage = function() {
             window.currentUserImage = null;
             document.getElementById('usr-img-preview').src = '';
@@ -1807,18 +1804,27 @@
                 name: name, 
                 username: username, 
                 password: password, 
-                permissions: permissions,
-                image: window.currentUserImage // บันทึกรูปโปรไฟล์ที่อัปโหลด
+                permissions: permissions
             };
 
+            // FIX: ใช้ Object.assign เพื่ออัปเดตข้อมูลทับของเดิมโดยไม่ลบภาพหรือค่าอื่นๆ ทิ้ง
             var existingIdx = usersDB.findIndex(x => x.id === data.id);
-            if(existingIdx >= 0) usersDB[existingIdx] = data;
-            else usersDB.push(data);
+            if(existingIdx >= 0) {
+                data.image = window.currentUserImage !== null ? window.currentUserImage : usersDB[existingIdx].image;
+                usersDB[existingIdx] = Object.assign({}, usersDB[existingIdx], data);
+            } else {
+                data.image = window.currentUserImage;
+                usersDB.push(data);
+            }
             
             window.saveLocal();
             window.renderUsers();
-            if(window.dbOp) window.dbOp.saveUser(data);
+            
+            var finalDataToSave = existingIdx >= 0 ? usersDB[existingIdx] : data;
+            if(window.dbOp) window.dbOp.saveUser(finalDataToSave);
+            
             window.closeModal('modal-user');
+            window.showAlert('บันทึกข้อมูลผู้ใช้งานสำเร็จ');
         };
 
         window.deleteUser = async function(id) {
