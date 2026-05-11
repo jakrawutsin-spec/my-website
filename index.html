@@ -343,7 +343,7 @@
                             <i data-lucide="handshake" class="w-5 h-5"></i> <span class="hidden xl:inline">ยืม-คืน</span>
                         </button>
                         <button onclick="window.switchTab('users')" id="nav-users" class="nav-btn">
-                            <i data-lucide="user-cog" class="w-5 h-5"></i> <span class="hidden xl:inline">ผู้ใช้งาน</span>
+                            <i data-lucide="users-cog" class="w-5 h-5"></i> <span class="hidden xl:inline">ผู้ใช้งาน</span>
                         </button>
                     </div>
                 </nav>
@@ -374,7 +374,7 @@
                 <button onclick="window.switchTab('locations')" id="nav-locations-mb" class="nav-btn flex-col gap-1 p-3 text-[10px] flex-1"><i data-lucide="map-pin" class="w-5 h-5 mb-1"></i> จุด</button>
                 <button onclick="window.switchTab('stock')" id="nav-stock-mb" class="nav-btn flex-col gap-1 p-3 text-[10px] flex-1"><i data-lucide="package" class="w-5 h-5 mb-1"></i> สต๊อก</button>
                 <button onclick="window.switchTab('borrow')" id="nav-borrow-mb" class="nav-btn flex-col gap-1 p-3 text-[10px] flex-1"><i data-lucide="handshake" class="w-5 h-5 mb-1"></i> ยืมคืน</button>
-                <button onclick="window.switchTab('users')" id="nav-users-mb" class="nav-btn flex-col gap-1 p-3 text-[10px] flex-1"><i data-lucide="user-cog" class="w-5 h-5 mb-1"></i> ผู้ใช้</button>
+                <button onclick="window.switchTab('users')" id="nav-users-mb" class="nav-btn flex-col gap-1 p-3 text-[10px] flex-1"><i data-lucide="users-cog" class="w-5 h-5 mb-1"></i> ผู้ใช้</button>
             </div>
         </nav>
 
@@ -727,6 +727,22 @@
             <input type="hidden" id="usr-id">
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- ส่วนอัปโหลดรูปโปรไฟล์ (Profile Image) -->
+                <div class="md:col-span-2 flex flex-col items-center justify-center mb-2">
+                    <label class="text-[11px] font-black text-slate-400 uppercase mb-3 block text-center">รูปโปรไฟล์ผู้ใช้งาน</label>
+                    <div class="relative w-28 h-28 group">
+                        <div class="w-full h-full rounded-[1.5rem] border-2 border-dashed border-slate-300 bg-slate-50 flex items-center justify-center overflow-hidden shadow-inner group-hover:border-blue-400 group-hover:bg-blue-50 transition-all">
+                            <img id="usr-img-preview" src="" class="w-full h-full object-cover hidden">
+                            <div id="usr-img-icon" class="text-center transition-transform group-hover:-translate-y-1">
+                                <i data-lucide="image-plus" class="w-8 h-8 text-slate-400 mx-auto mb-1"></i>
+                                <span class="text-[9px] font-bold text-slate-400">อัปโหลดรูป</span>
+                            </div>
+                        </div>
+                        <input type="file" id="usr-image" accept="image/*" onchange="window.handleUserImageUpload(event)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" title="อัปโหลดรูปโปรไฟล์">
+                        <button type="button" onclick="window.clearUserImage()" id="btn-clear-usr-img" class="hidden absolute -top-3 -right-3 bg-red-500 text-white rounded-xl p-2 z-30 shadow-md hover:bg-red-600 transition-all hover:scale-110"><i data-lucide="x" class="w-4 h-4"></i></button>
+                    </div>
+                </div>
+
                 <div class="md:col-span-2">
                     <label class="text-[11px] font-black text-slate-400 uppercase ml-2 mb-2 block">สิทธิ์การใช้งาน (Role)</label>
                     <select id="usr-role" onchange="window.togglePermVisibility()" class="w-full px-6 py-5 bg-slate-50 border border-slate-200 rounded-2xl font-black text-lg outline-none focus:bg-white focus:border-blue-500 transition-all shadow-sm">
@@ -1649,10 +1665,6 @@
                 else if(usr.role === 'staff') { roleBadge = 'bg-orange-50 text-orange-600 border-orange-200'; roleBg = 'bg-orange-500'; }
                 else if(usr.role === 'customer') { roleBadge = 'bg-emerald-50 text-emerald-600 border-emerald-200'; roleBg = 'bg-emerald-500'; }
 
-                var avatarHtml = usr.image 
-                    ? `<img src="${usr.image}" class="w-full h-full object-cover">` 
-                    : `${usr.name[0]}`;
-
                 return `
                 <tr class="hover:bg-slate-50 transition-colors border-b border-slate-50">
                     <td class="px-8 py-6">
@@ -1661,8 +1673,8 @@
                         </span>
                     </td>
                     <td class="py-6 font-black text-slate-800 text-lg flex items-center gap-4">
-                        <div class="w-12 h-12 rounded-[1rem] flex items-center justify-center text-sm text-white font-black shadow-md ${roleBg} overflow-hidden border border-slate-200/50">
-                            ${avatarHtml}
+                        <div class="w-12 h-12 rounded-full flex items-center justify-center text-sm text-white font-black shadow-md ${roleBg}">
+                            ${usr.name[0]}
                         </div> 
                         ${usr.name}
                     </td>
@@ -1698,7 +1710,6 @@
         window.openUserModal = function(id = null) {
             var allCbs = document.querySelectorAll('.perm-cb');
             allCbs.forEach(cb => { cb.checked = false; cb.disabled = false; }); 
-            window.clearUserImage();
             
             if(id) {
                 var usr = usersDB.find(x => x.id === id);
@@ -1708,15 +1719,6 @@
                 document.getElementById('usr-username').value = usr.username;
                 document.getElementById('usr-password').value = usr.password;
                 document.getElementById('user-modal-title').innerText = 'แก้ไขข้อมูลผู้ใช้งาน';
-                
-                // โหลดรูปภาพถ้ามี
-                if (usr.image) {
-                    window.currentUserImage = usr.image;
-                    document.getElementById('usr-img-preview').src = usr.image;
-                    document.getElementById('usr-img-preview').classList.remove('hidden');
-                    document.getElementById('usr-img-icon').classList.add('hidden');
-                    document.getElementById('btn-clear-usr-img').classList.remove('hidden');
-                }
                 
                 var userPerms = usr.permissions;
                 if (!userPerms) {
@@ -1753,31 +1755,6 @@
             document.getElementById('modal-user').classList.add('active');
         };
 
-        window.currentUserImage = null;
-
-        window.handleUserImageUpload = function(event) {
-            var file = event.target.files[0];
-            if (!file) return;
-            var reader = new FileReader();
-            reader.onload = function(e) {
-                window.currentUserImage = e.target.result;
-                document.getElementById('usr-img-preview').src = window.currentUserImage;
-                document.getElementById('usr-img-preview').classList.remove('hidden');
-                document.getElementById('usr-img-icon').classList.add('hidden');
-                document.getElementById('btn-clear-usr-img').classList.remove('hidden');
-                document.getElementById('usr-image').value = '';
-            };
-            reader.readAsDataURL(file);
-        };
-
-        window.clearUserImage = function() {
-            window.currentUserImage = null;
-            document.getElementById('usr-img-preview').src = '';
-            document.getElementById('usr-img-preview').classList.add('hidden');
-            document.getElementById('usr-img-icon').classList.remove('hidden');
-            document.getElementById('btn-clear-usr-img').classList.add('hidden');
-        };
-
         window.saveUser = async function() {
             var id = document.getElementById('usr-id').value;
             var role = document.getElementById('usr-role').value;
@@ -1801,31 +1778,17 @@
 
             var data = {
                 id: id ? id : 'USR-' + Date.now(),
-                role: role, 
-                name: name, 
-                username: username, 
-                password: password, 
-                permissions: permissions
+                role: role, name: name, username: username, password: password, permissions: permissions
             };
 
-            // ใช้ Object.assign อัปเดตข้อมูลเพื่อให้รูปเก่าหรือข้อมูลเดิมไม่โดนลบทิ้ง
             var existingIdx = usersDB.findIndex(x => x.id === data.id);
-            if(existingIdx >= 0) {
-                data.image = window.currentUserImage !== null ? window.currentUserImage : usersDB[existingIdx].image;
-                usersDB[existingIdx] = Object.assign({}, usersDB[existingIdx], data);
-            } else {
-                data.image = window.currentUserImage;
-                usersDB.push(data);
-            }
+            if(existingIdx >= 0) usersDB[existingIdx] = data;
+            else usersDB.push(data);
             
             window.saveLocal();
             window.renderUsers();
-            
-            var finalDataToSave = existingIdx >= 0 ? usersDB[existingIdx] : data;
-            if(window.dbOp) window.dbOp.saveUser(finalDataToSave);
-            
+            if(window.dbOp) window.dbOp.saveUser(data);
             window.closeModal('modal-user');
-            window.showAlert('บันทึกข้อมูลและรหัสผ่านสำเร็จเรียบร้อยแล้ว');
         };
 
         window.deleteUser = async function(id) {
