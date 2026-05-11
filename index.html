@@ -1709,6 +1709,7 @@
                 document.getElementById('usr-password').value = usr.password;
                 document.getElementById('user-modal-title').innerText = 'แก้ไขข้อมูลผู้ใช้งาน';
                 
+                // โหลดรูปภาพถ้ามี
                 if (usr.image) {
                     window.currentUserImage = usr.image;
                     document.getElementById('usr-img-preview').src = usr.image;
@@ -1807,7 +1808,7 @@
                 permissions: permissions
             };
 
-            // FIX: ใช้ Object.assign เพื่ออัปเดตข้อมูลทับของเดิมโดยไม่ลบภาพหรือค่าอื่นๆ ทิ้ง
+            // ใช้ Object.assign อัปเดตข้อมูลเพื่อให้รูปเก่าหรือข้อมูลเดิมไม่โดนลบทิ้ง
             var existingIdx = usersDB.findIndex(x => x.id === data.id);
             if(existingIdx >= 0) {
                 data.image = window.currentUserImage !== null ? window.currentUserImage : usersDB[existingIdx].image;
@@ -1824,7 +1825,7 @@
             if(window.dbOp) window.dbOp.saveUser(finalDataToSave);
             
             window.closeModal('modal-user');
-            window.showAlert('บันทึกข้อมูลผู้ใช้งานสำเร็จ');
+            window.showAlert('บันทึกข้อมูลและรหัสผ่านสำเร็จเรียบร้อยแล้ว');
         };
 
         window.deleteUser = async function(id) {
