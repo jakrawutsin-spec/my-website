@@ -112,12 +112,58 @@
     <!-- ==================== CONTAINER สำหรับปริ้นใบงาน ==================== -->
     <div id="print-wo-container"></div>
 
-    <!-- ==================== PUBLIC TRACKING PAGE (Default View) ==================== -->
-    <div id="public-page" class="fixed inset-0 z-[50] bg-premium-dark flex items-center justify-center p-4 overflow-y-auto no-print">
+    <!-- ==================== LANDING PAGE (Role Selection) ==================== -->
+    <div id="landing-page" class="fixed inset-0 z-[60] bg-premium-dark flex flex-col items-center justify-center p-4 overflow-y-auto no-print">
+        <div class="text-center space-y-4 mb-10 animate-fade-in">
+            <div class="w-24 h-24 bg-white rounded-[2rem] mx-auto flex items-center justify-center text-blue-600 mb-6 shadow-xl shadow-blue-500/20">
+                <i data-lucide="shield-check" class="w-12 h-12"></i>
+            </div>
+            <h1 class="text-4xl md:text-5xl font-black text-white tracking-tighter">CCTV<span class="text-blue-500">CORE</span></h1>
+            <p class="text-blue-200 font-medium tracking-widest uppercase text-sm">Enterprise Management System</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-5xl animate-fade-in delay-1">
+            <!-- Customer Card -->
+            <button onclick="selectRole('customer')" class="bg-white/10 backdrop-blur-md border border-white/20 p-8 rounded-[2.5rem] flex flex-col items-center gap-4 hover:bg-white/20 hover:-translate-y-2 transition-all group shadow-2xl">
+                <div class="w-20 h-20 bg-emerald-500 rounded-full flex items-center justify-center text-white shadow-lg shadow-emerald-500/30 group-hover:scale-110 transition-transform">
+                    <i data-lucide="users" class="w-10 h-10"></i>
+                </div>
+                <div class="text-center mt-2">
+                    <h3 class="text-2xl font-black text-white tracking-tight">ลูกค้า</h3>
+                    <p class="text-emerald-200 text-sm mt-1 font-medium">Customer Portal</p>
+                </div>
+            </button>
+
+            <!-- Staff Card -->
+            <button onclick="selectRole('staff')" class="bg-white/10 backdrop-blur-md border border-white/20 p-8 rounded-[2.5rem] flex flex-col items-center gap-4 hover:bg-white/20 hover:-translate-y-2 transition-all group shadow-2xl">
+                <div class="w-20 h-20 bg-orange-500 rounded-full flex items-center justify-center text-white shadow-lg shadow-orange-500/30 group-hover:scale-110 transition-transform">
+                    <i data-lucide="wrench" class="w-10 h-10"></i>
+                </div>
+                <div class="text-center mt-2">
+                    <h3 class="text-2xl font-black text-white tracking-tight">สตาฟ/ช่าง</h3>
+                    <p class="text-orange-200 text-sm mt-1 font-medium">Staff Operations</p>
+                </div>
+            </button>
+
+            <!-- Admin Card -->
+            <button onclick="selectRole('admin')" class="bg-white/10 backdrop-blur-md border border-white/20 p-8 rounded-[2.5rem] flex flex-col items-center gap-4 hover:bg-white/20 hover:-translate-y-2 transition-all group shadow-2xl">
+                <div class="w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center text-white shadow-lg shadow-blue-600/30 group-hover:scale-110 transition-transform">
+                    <i data-lucide="lock" class="w-10 h-10"></i>
+                </div>
+                <div class="text-center mt-2">
+                    <h3 class="text-2xl font-black text-white tracking-tight">ผู้ดูแลระบบ</h3>
+                    <p class="text-blue-200 text-sm mt-1 font-medium">Admin Dashboard</p>
+                </div>
+            </button>
+        </div>
+    </div>
+
+    <!-- ==================== PUBLIC TRACKING PAGE (Customer View) ==================== -->
+    <div id="public-page" class="hidden fixed inset-0 z-[50] bg-premium-dark flex items-center justify-center p-4 overflow-y-auto no-print">
         <div class="bg-white w-full max-w-2xl rounded-[3rem] shadow-2xl p-8 md:p-12 space-y-8 animate-fade-in my-8 relative">
             
-            <button onclick="showLogin()" class="absolute top-6 right-6 px-4 py-2 bg-slate-100 text-slate-600 rounded-xl text-xs font-black uppercase hover:bg-blue-600 hover:text-white transition-all flex items-center gap-2">
-                <i data-lucide="lock" class="w-3 h-3"></i> Admin Login
+            <button onclick="handleLogout()" class="absolute top-6 right-6 px-4 py-2 bg-red-50 text-red-500 rounded-xl text-xs font-black uppercase hover:bg-red-500 hover:text-white transition-all flex items-center gap-2">
+                <i data-lucide="log-out" class="w-3 h-3"></i> ออกจากระบบ
             </button>
 
             <div class="text-center space-y-2 pt-4">
@@ -192,7 +238,7 @@
         </div>
 
         <div class="bg-white/10 backdrop-blur-2xl border border-white/20 w-full max-w-md rounded-[3rem] p-10 space-y-8 animate-fade-in shadow-2xl relative z-10">
-            <button onclick="hideLogin()" class="absolute top-6 right-6 text-white/50 hover:text-white transition-colors">
+            <button onclick="showLanding()" class="absolute top-6 right-6 text-white/50 hover:text-white transition-colors">
                 <i data-lucide="x" class="w-6 h-6"></i>
             </button>
 
@@ -201,21 +247,21 @@
                     <i data-lucide="shield-check" class="w-12 h-12"></i>
                 </div>
                 <h2 class="text-3xl font-black text-white tracking-tight">CCTV CORE</h2>
-                <p class="text-blue-200 font-bold text-[10px] uppercase tracking-[0.3em] mt-2">Admin / Staff Login</p>
+                <p id="login-role-title" class="text-blue-200 font-bold text-[10px] uppercase tracking-[0.3em] mt-2">System Login</p>
             </div>
 
             <div class="space-y-4">
-                <input type="text" id="login-user" value="admin" class="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl outline-none focus:ring-2 focus:ring-blue-400 font-bold transition-all text-white placeholder:text-white/40" placeholder="Username (admin)">
-                <input type="password" id="login-pass" value="1234" class="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl outline-none focus:ring-2 focus:ring-blue-400 font-bold transition-all text-white placeholder:text-white/40" placeholder="Password (1234)">
+                <input type="text" id="login-user" value="" class="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl outline-none focus:ring-2 focus:ring-blue-400 font-bold transition-all text-white placeholder:text-white/40" placeholder="Username">
+                <input type="password" id="login-pass" value="" class="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl outline-none focus:ring-2 focus:ring-blue-400 font-bold transition-all text-white placeholder:text-white/40" placeholder="Password">
             </div>
 
             <button onclick="handleLogin()" class="w-full py-4 bg-white text-blue-600 rounded-2xl font-black shadow-xl active:scale-95 transition-all uppercase tracking-widest text-sm flex justify-center items-center gap-2 hover:bg-blue-50">
-                เข้าสู่ระบบส่วนจัดการ <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                เข้าสู่ระบบ <i data-lucide="arrow-right" class="w-4 h-4"></i>
             </button>
 
             <div class="pt-6 border-t border-white/10 text-center">
-                <button onclick="hideLogin()" class="w-full py-4 border border-white/20 rounded-2xl text-white/80 text-[11px] font-bold uppercase tracking-widest hover:bg-white/20 hover:text-white transition-colors">
-                    ← กลับหน้าบริการลูกค้า
+                <button onclick="showLanding()" class="w-full py-4 border border-white/20 rounded-2xl text-white/80 text-[11px] font-bold uppercase tracking-widest hover:bg-white/20 hover:text-white transition-colors">
+                    ← กลับหน้าหลัก (เลือกสิทธิ์การใช้งาน)
                 </button>
             </div>
         </div>
@@ -267,7 +313,7 @@
                 <div class="flex items-center gap-4 pl-6 border-l border-slate-200 shrink-0">
                     <div class="hidden lg:flex items-center gap-4 pr-4">
                         <div class="text-right">
-                            <p class="text-sm font-black text-slate-800 leading-none">Admin</p>
+                            <p id="user-role-display" class="text-sm font-black text-slate-800 leading-none uppercase">Admin</p>
                         </div>
                         <div class="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center font-black text-blue-600 shadow-sm">
                             <i data-lucide="user" class="w-5 h-5"></i>
@@ -511,6 +557,29 @@
 
     <!-- ==================== MODALS ==================== -->
 
+    <!-- MODAL: GALLERY VIEWER (ระบบดูรูปภาพ) -->
+    <div id="modal-gallery" class="modal z-[99999]">
+        <div class="bg-black/95 absolute inset-0 flex flex-col">
+            <div class="p-6 flex justify-between items-center bg-gradient-to-b from-black/80 to-transparent">
+                <h3 class="text-white font-bold text-lg" id="gallery-title">รูปภาพหน้างาน</h3>
+                <div class="flex gap-4">
+                    <a id="gallery-download" href="#" download="installation_image.png" class="p-3 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-colors backdrop-blur-sm shadow-lg" title="ดาวน์โหลดรูปภาพนี้"><i data-lucide="download" class="w-5 h-5"></i></a>
+                    <button onclick="closeModal('modal-gallery')" class="p-3 bg-white/10 hover:bg-white/20 text-red-400 rounded-xl transition-colors backdrop-blur-sm shadow-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+                </div>
+            </div>
+            <div class="flex-1 flex items-center justify-center relative p-4 overflow-hidden">
+                <button onclick="galleryPrev()" class="absolute left-4 md:left-10 p-4 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition-all z-10 focus:outline-none"><i data-lucide="chevron-left" class="w-10 h-10 drop-shadow-lg"></i></button>
+                
+                <img id="gallery-main-img" src="" class="max-w-full max-h-full object-contain shadow-2xl transition-all duration-300 rounded-lg">
+                
+                <button onclick="galleryNext()" class="absolute right-4 md:right-10 p-4 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition-all z-10 focus:outline-none"><i data-lucide="chevron-right" class="w-10 h-10 drop-shadow-lg"></i></button>
+            </div>
+            <div class="p-6 bg-gradient-to-t from-black/80 to-transparent flex justify-center gap-3 overflow-x-auto custom-scroll" id="gallery-thumbnails">
+                <!-- Thumbnails injected here -->
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL: ADD/EDIT INSTALLATION (งานติดตั้ง) -->
     <div id="modal-install" class="modal">
         <div class="bg-white p-8 md:p-12 rounded-[3.5rem] w-full max-w-5xl shadow-2xl overflow-y-auto max-h-[90vh] custom-scroll">
@@ -556,16 +625,21 @@
                 </div>
                 
                 <div class="space-y-4">
-                    <label class="text-[10px] font-black text-slate-400 uppercase ml-2 block">อัปโหลดรูปภาพหน้างาน / แปลน (ถ้ามี)</label>
-                    <div class="border-2 border-dashed border-slate-300 rounded-[2rem] p-6 text-center hover:bg-slate-50 transition-colors cursor-pointer relative flex flex-col items-center justify-center h-64 overflow-hidden bg-white">
-                        <input type="file" id="ins-image" accept="image/*" onchange="handleImageUpload(event)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20">
+                    <label class="text-[10px] font-black text-slate-400 uppercase ml-2 block">อัปโหลดรูปภาพหน้างาน / แปลน (เพิ่มได้ไม่จำกัด)</label>
+                    <div class="border-2 border-dashed border-slate-300 rounded-[2rem] p-6 text-center hover:bg-slate-50 transition-colors relative bg-white">
+                        <input type="file" id="ins-image" accept="image/*" multiple onchange="handleMultipleImageUpload(event)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20">
                         <div id="ins-upload-placeholder" class="space-y-2 pointer-events-none">
-                            <div class="w-12 h-12 bg-blue-100 text-blue-500 rounded-full flex items-center justify-center mx-auto"><i data-lucide="image-plus"></i></div>
-                            <p class="font-bold text-slate-500 text-sm">คลิกเพื่อเลือกไฟล์รูปภาพเพื่อเปลี่ยนแปลง</p>
+                            <div class="w-12 h-12 bg-blue-100 text-blue-500 rounded-full flex items-center justify-center mx-auto"><i data-lucide="images"></i></div>
+                            <p class="font-bold text-slate-500 text-sm">คลิกหรือลากไฟล์มาวางที่นี่ (เลือกได้หลายไฟล์พร้อมกัน)</p>
                         </div>
-                        <img id="ins-img-preview" src="" class="absolute inset-0 w-full h-full object-cover hidden z-10">
                     </div>
-                    <button type="button" onclick="clearImage()" class="text-[10px] font-black text-red-500 uppercase ml-2 hover:underline">ลบรูปภาพออก</button>
+                    
+                    <!-- Container สำหรับพรีวิวรูปภาพที่เลือก -->
+                    <div id="ins-images-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mt-4 hidden">
+                        <!-- รูปจะถูกเพิ่มที่นี่ผ่าน JS -->
+                    </div>
+                    
+                    <button type="button" onclick="clearAllImages()" id="btn-clear-images" class="hidden text-[10px] font-black text-red-500 uppercase ml-2 hover:underline">ลบรูปภาพทั้งหมด</button>
                 </div>
             </div>
 
@@ -782,13 +856,6 @@
             <button onclick="saveNewRepair('public')" class="w-full mt-10 py-5 bg-emerald-600 text-white font-black rounded-2xl shadow-xl shadow-emerald-500/30 hover:bg-emerald-700 transition-all uppercase tracking-widest active:scale-95 flex justify-center items-center gap-2 text-lg">
                 <i data-lucide="send" class="w-5 h-5"></i> ส่งข้อมูลเข้าตารางแจ้งซ่อม
             </button>
-            
-            <!-- ปุ่ม Login สำหรับแอดมินในหน้าแจ้งซ่อม -->
-            <div class="mt-6 text-center">
-                <button onclick="closeModal('modal-public-repair'); showLogin();" class="text-blue-500 hover:text-blue-700 text-sm font-bold underline flex items-center justify-center gap-1 mx-auto transition-colors">
-                    <i data-lucide="shield-check" class="w-4 h-4"></i> สำหรับเจ้าหน้าที่ (Admin Login)
-                </button>
-            </div>
         </div>
     </div>
 
@@ -1120,13 +1187,17 @@
         };
 
         let currentActiveWO = null;
-        let currentImageBase64 = ''; 
+        let currentImages = []; // เปลี่ยนมารองรับหลายรูป
+        let galleryImages = []; // เก็บรูปสำหรับดูในแกลเลอรี่
+        let galleryCurrentIndex = 0;
         let currentBorrowId = null; 
 
         let mainMap, pickerMap, pickerMarker;
         let publicPickerMap, publicPickerMarker;
         let locPickerMap, locPickerMarker;
         let markers = [];
+        let currentRole = 'public'; // ตัวแปรเก็บสิทธิ์การใช้งาน (public, admin, staff)
+        let pendingLoginRole = ''; // เก็บสถานะว่ากำลังพยายามล็อกอินเข้าสิทธิ์ไหน
 
         // --- MAP SAFE INITIALIZATION ---
         function initMapSafe(elementId, lat, lng, zoomLevel, callback) {
@@ -1150,39 +1221,91 @@
         }
 
         // --- CORE FUNCTIONS ---
-        function showLogin() {
-            document.getElementById('public-page').classList.add('hidden');
-            document.getElementById('login-page').classList.remove('hidden');
-        }
-
-        function hideLogin() {
+        function showLanding() {
+            document.getElementById('landing-page').classList.remove('hidden');
             document.getElementById('login-page').classList.add('hidden');
-            document.getElementById('public-page').classList.remove('hidden');
+            document.getElementById('public-page').classList.add('hidden');
+            document.getElementById('main-app').classList.add('hidden');
             document.getElementById('login-user').value = '';
             document.getElementById('login-pass').value = '';
         }
 
+        function selectRole(role) {
+            pendingLoginRole = role;
+            document.getElementById('landing-page').classList.add('hidden');
+            document.getElementById('login-page').classList.remove('hidden');
+            
+            const titleEl = document.getElementById('login-role-title');
+            if(role === 'customer') {
+                titleEl.innerText = 'Customer Login';
+                document.getElementById('login-user').placeholder = 'Username (ลองพิมพ์: customer)';
+                document.getElementById('login-pass').placeholder = 'Password (ลองพิมพ์: 1234)';
+            } else if(role === 'staff') {
+                titleEl.innerText = 'Staff Login';
+                document.getElementById('login-user').placeholder = 'Username (ลองพิมพ์: staff)';
+                document.getElementById('login-pass').placeholder = 'Password (ลองพิมพ์: 1234)';
+            } else if(role === 'admin') {
+                titleEl.innerText = 'Admin Login';
+                document.getElementById('login-user').placeholder = 'Username (ลองพิมพ์: admin)';
+                document.getElementById('login-pass').placeholder = 'Password (ลองพิมพ์: 1234)';
+            }
+        }
+
         function handleLogin() {
-            const user = document.getElementById('login-user').value;
+            const user = document.getElementById('login-user').value.toLowerCase();
             const pass = document.getElementById('login-pass').value;
-            if(user === 'admin' && pass === '1234') {
+            
+            // ตรวจสอบสิทธิ์และรหัสผ่าน (จำลองระบบล็อกอิน)
+            const isValidCustomer = pendingLoginRole === 'customer' && user === 'customer' && pass === '1234';
+            const isValidStaff = pendingLoginRole === 'staff' && user === 'staff' && pass === '1234';
+            const isValidAdmin = pendingLoginRole === 'admin' && user === 'admin' && pass === '1234';
+            
+            if(isValidCustomer) {
+                currentRole = 'customer';
                 document.getElementById('login-page').classList.add('hidden');
-                document.getElementById('public-page').classList.add('hidden');
+                document.getElementById('public-page').classList.remove('hidden');
+            }
+            else if(isValidStaff || isValidAdmin) {
+                currentRole = user;
+                document.getElementById('login-page').classList.add('hidden');
                 document.getElementById('main-app').classList.remove('hidden');
-                document.getElementById('in-date').value = todayStr;
                 
-                setTimeout(initDashboardMap, 300);
+                // อัปเดตชื่อ Role มุมขวาบน
+                document.getElementById('user-role-display').innerText = user;
+
+                // จัดการสิทธิ์การมองเห็นเมนู (RBAC)
+                if (user === 'staff') {
+                    // หากเป็น Staff ให้ซ่อนเมนูอื่น ยกเว้น Locations
+                    document.getElementById('nav-dashboard').style.display = 'none';
+                    document.getElementById('nav-reports').style.display = 'none';
+                    document.getElementById('nav-installations').style.display = 'none';
+                    document.getElementById('nav-stock').style.display = 'none';
+                    document.getElementById('nav-borrow').style.display = 'none';
+                    
+                    switchTab('locations'); // บังคับแสดงหน้าจัดการจุดติดตั้งทันที
+                } else {
+                    // หากเป็น Admin ให้เห็นครบทุกเมนู
+                    document.getElementById('nav-dashboard').style.display = 'inline-flex';
+                    document.getElementById('nav-reports').style.display = 'inline-flex';
+                    document.getElementById('nav-installations').style.display = 'inline-flex';
+                    document.getElementById('nav-locations').style.display = 'inline-flex';
+                    document.getElementById('nav-stock').style.display = 'inline-flex';
+                    document.getElementById('nav-borrow').style.display = 'inline-flex';
+                    
+                    document.getElementById('in-date').value = todayStr;
+                    switchTab('dashboard');
+                    setTimeout(initDashboardMap, 300);
+                }
+                
                 renderAll();
             } else {
-                alert('Login Failed! Username or password incorrect.');
+                alert('Login Failed! Username or password incorrect for selected role.');
             }
         }
 
         function handleLogout() { 
-            document.getElementById('main-app').classList.add('hidden');
-            document.getElementById('public-page').classList.remove('hidden');
-            document.getElementById('login-user').value = '';
-            document.getElementById('login-pass').value = '';
+            currentRole = 'public';
+            showLanding();
         }
 
         function renderAll() {
@@ -1237,26 +1360,110 @@
         }
 
         // --- IMAGE HANDLING ---
-        function handleImageUpload(event) {
-            const file = event.target.files[0];
-            if (file) {
+        function handleMultipleImageUpload(event) {
+            const files = event.target.files;
+            if (!files || files.length === 0) return;
+            
+            let readersLoaded = 0;
+            const targetLoads = files.length;
+
+            Array.from(files).forEach(file => {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    currentImageBase64 = e.target.result;
-                    document.getElementById('ins-img-preview').src = currentImageBase64;
-                    document.getElementById('ins-img-preview').classList.remove('hidden');
-                    document.getElementById('ins-upload-placeholder').classList.add('hidden');
+                    currentImages.push(e.target.result);
+                    readersLoaded++;
+                    if(readersLoaded === targetLoads) {
+                        renderImagePreviews();
+                        document.getElementById('ins-image').value = ''; // รีเซ็ต input เผื่อเลือกรูปเดิมอีกรอบ
+                    }
                 }
                 reader.readAsDataURL(file);
-            }
+            });
         }
 
-        function clearImage() {
-            currentImageBase64 = '';
-            document.getElementById('ins-img-preview').src = '';
-            document.getElementById('ins-img-preview').classList.add('hidden');
-            document.getElementById('ins-upload-placeholder').classList.remove('hidden');
-            document.getElementById('ins-image').value = '';
+        function renderImagePreviews() {
+            const container = document.getElementById('ins-images-container');
+            const clearBtn = document.getElementById('btn-clear-images');
+            
+            if(currentImages.length === 0) {
+                container.classList.add('hidden');
+                clearBtn.classList.add('hidden');
+                container.innerHTML = '';
+                return;
+            }
+
+            container.classList.remove('hidden');
+            clearBtn.classList.remove('hidden');
+            
+            container.innerHTML = currentImages.map((img, index) => `
+                <div class="relative group aspect-square rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-slate-100">
+                    <img src="${img}" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 backdrop-blur-sm">
+                        <button type="button" onclick="viewImageFull('${index}')" class="p-2.5 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors shadow-lg" title="ดูรูปขยาย"><i data-lucide="zoom-in" class="w-4 h-4"></i></button>
+                        <button type="button" onclick="removeSingleImage(${index})" class="p-2.5 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors shadow-lg" title="ลบรูปนี้"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </div>
+                </div>
+            `).join('');
+            if(typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function removeSingleImage(index) {
+            currentImages.splice(index, 1);
+            renderImagePreviews();
+        }
+
+        function clearAllImages() {
+            currentImages = [];
+            renderImagePreviews();
+        }
+
+        // --- GALLERY FUNCTIONS ---
+        function openGallery(sourceArray, startIndex = 0, title = 'รูปภาพ') {
+            if(!sourceArray || sourceArray.length === 0) return;
+            galleryImages = sourceArray;
+            galleryCurrentIndex = startIndex;
+            document.getElementById('gallery-title').innerText = title;
+            document.getElementById('modal-gallery').classList.add('active');
+            updateGalleryView();
+        }
+        
+        function updateGalleryView() {
+            const mainImg = document.getElementById('gallery-main-img');
+            const dlBtn = document.getElementById('gallery-download');
+            const currentBase64 = galleryImages[galleryCurrentIndex];
+            
+            mainImg.src = currentBase64;
+            dlBtn.href = currentBase64;
+            dlBtn.download = 'cctv_image_' + Date.now() + '.png';
+            
+            const thumbContainer = document.getElementById('gallery-thumbnails');
+            thumbContainer.innerHTML = galleryImages.map((img, idx) => `
+                <button onclick="galleryCurrentIndex = ${idx}; updateGalleryView();" class="w-16 h-16 shrink-0 rounded-xl overflow-hidden border-2 transition-all shadow-lg ${idx === galleryCurrentIndex ? 'border-blue-500 opacity-100 scale-110' : 'border-transparent opacity-50 hover:opacity-100'}">
+                    <img src="${img}" class="w-full h-full object-cover">
+                </button>
+            `).join('');
+        }
+        
+        function galleryNext() {
+            galleryCurrentIndex = (galleryCurrentIndex + 1) % galleryImages.length;
+            updateGalleryView();
+        }
+        
+        function galleryPrev() {
+            galleryCurrentIndex = (galleryCurrentIndex - 1 + galleryImages.length) % galleryImages.length;
+            updateGalleryView();
+        }
+        
+        window.viewImageFull = function(index) {
+            openGallery(currentImages, parseInt(index), 'พรีวิวรูปภาพหน้างาน');
+        }
+
+        window.openJobGallery = function(id) {
+            const job = installJobs.find(x => x.id === id);
+            if(job) {
+                const imgs = job.images || (job.image ? [job.image] : []);
+                openGallery(imgs, 0, 'ภาพรวมหน้างาน: #' + job.id);
+            }
         }
 
         // --- PUBLIC TRACKING ---
@@ -1340,14 +1547,10 @@
                 document.getElementById('ins-customer').value = custStr;
                 document.getElementById('ins-status').value = job.status;
                 
-                currentImageBase64 = job.image || '';
-                if(currentImageBase64) {
-                    document.getElementById('ins-img-preview').src = currentImageBase64;
-                    document.getElementById('ins-img-preview').classList.remove('hidden');
-                    document.getElementById('ins-upload-placeholder').classList.add('hidden');
-                } else {
-                    clearImage();
-                }
+                // รองรับทั้งข้อมูลเก่าที่มีรูปเดียว และแบบใหม่ที่มีหลายรูป
+                currentImages = job.images || (job.image ? [job.image] : []);
+                renderImagePreviews();
+
                 document.getElementById('install-modal-title').innerText = "แก้ไขงานติดตั้ง";
             } else {
                 document.getElementById('ins-id').value = '';
@@ -1356,7 +1559,7 @@
                 document.getElementById('ins-reporter').value = '';
                 document.getElementById('ins-customer').value = '';
                 document.getElementById('ins-status').value = 'รอดำเนินการ';
-                clearImage();
+                clearAllImages();
                 document.getElementById('install-modal-title').innerText = "เพิ่มงานติดตั้งใหม่ (Installation)";
             }
             document.getElementById('modal-install').classList.add('active');
@@ -1380,7 +1583,7 @@
                 customer: customerStr.split(' ')[0] || customerStr,
                 phone: customerStr.split(' ').slice(1).join(' ') || '-',
                 status: document.getElementById('ins-status').value,
-                image: currentImageBase64,
+                images: currentImages, // บันทึกเป็น Array แทน
                 history: []
             };
 
@@ -1416,7 +1619,21 @@
                         <p class="text-[9px] text-slate-400 font-bold uppercase mt-1">${formatThaiDate(item.datetime ? item.datetime.split('T')[0] : '')}</p>
                     </td>
                     <td class="py-6">
-                        ${item.image ? `<img src="${item.image}" class="w-16 h-16 object-cover rounded-xl shadow-sm border border-slate-200" alt="Job Image">` : `<div class="w-16 h-16 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400"><i data-lucide="image-off" class="w-5 h-5"></i></div>`}
+                        ${(() => {
+                            let imgs = item.images || (item.image ? [item.image] : []);
+                            if(imgs.length > 0) {
+                                let badge = imgs.length > 1 ? `<div class="absolute -top-2 -right-2 bg-blue-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-md shadow-blue-500/30 ring-2 ring-white">+${imgs.length - 1}</div>` : '';
+                                return `
+                                <div class="relative w-16 h-16 group/img cursor-pointer" onclick="openJobGallery('${item.id}'); event.stopPropagation();">
+                                    <img src="${imgs[0]}" class="w-full h-full object-cover rounded-2xl shadow-sm border border-slate-200 group-hover/img:brightness-75 transition-all">
+                                    <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity">
+                                        <i data-lucide="expand" class="text-white w-6 h-6 drop-shadow-lg"></i>
+                                    </div>
+                                    ${badge}
+                                </div>`;
+                            }
+                            return `<div class="w-16 h-16 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-center text-slate-400"><i data-lucide="image-off" class="w-5 h-5 opacity-50"></i></div>`;
+                        })()}
                     </td>
                     <td class="py-6 pr-4">
                         <p class="font-bold text-slate-800 leading-tight">${item.subject}</p>
@@ -2325,10 +2542,11 @@
 
         window.onload = () => {
             if(typeof lucide !== 'undefined') lucide.createIcons();
-            // Start app at public view default
+            // Start app at landing view default
             document.getElementById('main-app').classList.add('hidden');
             document.getElementById('login-page').classList.add('hidden');
-            document.getElementById('public-page').classList.remove('hidden');
+            document.getElementById('public-page').classList.add('hidden');
+            document.getElementById('landing-page').classList.remove('hidden');
         };
     </script>
 </body>
