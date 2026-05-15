@@ -33,7 +33,7 @@
         }
         @keyframes float-blob {
             0% { transform: translate(0px, 0px) scale(1) rotate(0deg); }
-            33% { transform: translate(30px, -50px) scale(1.05) rotate(5deg); }
+            33% { transform: translate(30px, -50px) scale(1.05)  rotate(5deg); }
             66% { transform: translate(-20px, 20px) scale(0.95) rotate(-5deg); }
             100% { transform: translate(0px, 0px) scale(1) rotate(0deg); }
         }
@@ -126,6 +126,51 @@
             .modal, .no-print { display: none !important; }
             body { background: white; }
         }
+
+        /* ======================================================== */
+        /* 📱 โซนแก้ไขบั๊กและปรับ Layout สำหรับหน้าจอมือถือโดยเฉพาะ 📱 */
+        /* ======================================================== */
+        @supports (padding-bottom: env(safe-area-inset-bottom)) {
+            /* เผื่อพื้นที่ขอบจอด้านล่าง (รอยบาก iPhone) */
+            .pb-safe { padding-bottom: max(0.5rem, env(safe-area-inset-bottom)); }
+        }
+        
+        @media (max-width: 768px) {
+            /* 1. ย่อขนาดหน้าต่าง Modal ไม่ให้ล้นจอขอบเขตมือถือ */
+            .modal { padding: 0.75rem; align-items: flex-end; /* เลื่อนให้อยู่ชิดล่างกดง่าย */ }
+            .modal > div { 
+                padding: 1.5rem !important; 
+                border-radius: 2rem !important; 
+                max-height: calc(100vh - 2rem - env(safe-area-inset-bottom)) !important; 
+                width: 100% !important; 
+                margin-bottom: env(safe-area-inset-bottom);
+            }
+            
+            /* 2. ปรับขนาดปุ่มและช่องกรอกข้อมูลให้กดง่ายพอดีนิ้ว ไม่สูงเกินไป */
+            input[type="text"], input[type="password"], input[type="number"], input[type="date"], input[type="datetime-local"], select, textarea { 
+                padding: 0.875rem 1rem !important; font-size: 1rem !important; border-radius: 1rem !important;
+            }
+            button.py-6, button.py-5 { 
+                padding-top: 1rem !important; padding-bottom: 1rem !important; 
+                font-size: 1.1rem !important; border-radius: 1.25rem !important; 
+            }
+            
+            /* 3. ป้องกันฟอร์มกรอกข้อมูลบีบตัว (สั่งให้เรียงลงมาเป็นแนวตั้งแทน) */
+            .modal .grid-cols-2 { grid-template-columns: repeat(1, minmax(0, 1fr)) !important; }
+            
+            /* 4. ปรับความสูงของแผนที่ให้พอดี ไม่กินที่จอเกินไป */
+            #picker-map, #public-picker-map, #loc-picker-map { height: 200px !important; border-radius: 1.5rem !important; }
+            
+            /* 5. ย่อตัวหนังสือและขนาดการ์ด (Card) ให้สมส่วนบนจอมือถือ */
+            h2.text-4xl, h2.text-5xl, h4.text-4xl { font-size: 1.75rem !important; line-height: 2.25rem !important; }
+            h3.text-6xl { font-size: 2.5rem !important; }
+            .p-12, .p-10 { padding: 1.5rem !important; }
+            .card-stat { padding: 1.5rem !important; border-radius: 1.5rem !important; }
+            
+            /* 6. ยกความสูงพื้นที่หน้าแอดมิน เพื่อไม่ให้แถบเมนูด้านล่างบังปุ่ม */
+            #main-app main { padding-bottom: calc(7.5rem + env(safe-area-inset-bottom)) !important; }
+            .nav-btn { flex-shrink: 0; min-width: 4.5rem; padding: 0.5rem !important; }
+        }
     </style>
 </head>
 <body class="antialiased text-slate-800">
@@ -201,22 +246,39 @@
                     <i data-lucide="headphones" class="w-12 h-12"></i>
                 </div>
                 <h2 class="text-4xl font-black text-slate-800 tracking-tighter">ศูนย์บริการลูกค้า</h2>
-                <p class="text-slate-500 font-bold text-base">แจ้งจุดติดตั้ง แจ้งซ่อม และติดตามความคืบหน้าแบบ Real-time</p>
+                <p class="text-slate-500 font-bold text-base">ระบบบริการตนเอง (Self-Service Portal)</p>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <button onclick="window.openPublicRepairModal()" class="flex flex-col items-center justify-center gap-4 p-12 bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-[3rem] transition-all duration-300 shadow-xl shadow-blue-500/30 hover:shadow-blue-500/50 active:scale-95 group hover:-translate-y-2 w-full">
-                    <i data-lucide="plus-circle" class="w-16 h-16 group-hover:rotate-90 transition-transform duration-500 animate-pulse"></i>
-                    <span class="font-black text-2xl tracking-tight">แจ้งซ่อม / แจ้งติดตั้ง</span>
+            <!-- Customer Menus Layout (จัดรูปแบบเมนูใหม่) -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
+                <!-- เมนูที่ 1: แจ้งซ่อม/ติดตั้ง -->
+                <button onclick="window.openPublicRepairModal()" class="flex flex-col items-center justify-center gap-4 p-10 bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-[3rem] transition-all duration-300 shadow-xl shadow-blue-500/30 hover:shadow-blue-500/50 active:scale-95 group hover:-translate-y-2 w-full relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
+                    <i data-lucide="plus-circle" class="w-16 h-16 group-hover:rotate-90 transition-transform duration-500 animate-pulse relative z-10"></i>
+                    <span class="font-black text-2xl tracking-tight relative z-10">แจ้งซ่อม / แจ้งติดตั้ง</span>
                 </button>
-                <div class="p-10 bg-slate-50 border border-slate-200 rounded-[3rem] flex flex-col justify-center gap-5 shadow-inner w-full text-center md:text-left">
-                    <div class="w-14 h-14 bg-white rounded-2xl shadow-sm flex items-center justify-center text-slate-400 mx-auto md:mx-0">
-                        <i data-lucide="search" class="w-7 h-7"></i>
+                
+                <!-- เมนูที่ 2: เช็คสต๊อกสินค้าคงเหลือ -->
+                <button onclick="window.openPublicStockModal()" class="flex flex-col items-center justify-center gap-4 p-10 bg-gradient-to-br from-emerald-500 to-teal-600 text-white rounded-[3rem] transition-all duration-300 shadow-xl shadow-emerald-500/30 hover:shadow-emerald-500/50 active:scale-95 group hover:-translate-y-2 w-full relative overflow-hidden">
+                    <div class="absolute bottom-0 left-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -ml-10 -mb-10 pointer-events-none"></div>
+                    <i data-lucide="package-search" class="w-16 h-16 group-hover:scale-110 transition-transform duration-500 relative z-10"></i>
+                    <span class="font-black text-2xl tracking-tight relative z-10">เช็คสินค้าในคลัง</span>
+                </button>
+
+                <!-- เมนูที่ 3: ติดตามสถานะ (รวมช่องค้นหา) -->
+                <div class="sm:col-span-2 p-8 md:p-10 bg-slate-50 border border-slate-200 rounded-[3rem] flex flex-col justify-center gap-6 shadow-inner w-full text-center md:text-left mt-2 relative overflow-hidden hover:border-blue-300 transition-colors">
+                    <div class="flex flex-col md:flex-row items-center gap-5 mb-2 relative z-10">
+                        <div class="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center text-slate-400 shrink-0">
+                            <i data-lucide="search" class="w-8 h-8"></i>
+                        </div>
+                        <div class="text-center md:text-left">
+                            <h3 class="font-black text-2xl text-slate-800">ติดตามสถานะงาน</h3>
+                            <p class="text-[11px] font-black text-slate-400 uppercase tracking-widest mt-1">กรอกรหัส Ticket ID ด้านล่างเพื่อค้นหา</p>
+                        </div>
                     </div>
-                    <label class="text-xs font-black text-slate-400 uppercase tracking-widest block">ติดตามสถานะงาน (Ticket ID)</label>
-                    <div class="flex gap-3">
-                        <input type="text" id="track-id" class="flex-1 w-full px-6 py-5 bg-white border border-slate-200 rounded-2xl outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 font-black text-slate-700 text-lg shadow-sm text-center md:text-left uppercase placeholder:normal-case transition-all" placeholder="เช่น REP-1234">
-                        <button onclick="window.trackTicket()" class="bg-slate-900 text-white px-6 py-5 rounded-2xl font-black hover:bg-slate-800 transition-all active:scale-95 shadow-lg flex items-center justify-center"><i data-lucide="arrow-right" class="w-6 h-6"></i></button>
+                    <div class="flex flex-col sm:flex-row gap-3 relative z-10">
+                        <input type="text" id="track-id" class="flex-1 w-full px-6 py-5 bg-white border border-slate-200 rounded-2xl outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 font-black text-slate-700 text-xl shadow-sm text-center md:text-left uppercase placeholder:normal-case transition-all placeholder:text-base placeholder:font-medium" placeholder="เช่น REP-1234">
+                        <button onclick="window.trackTicket()" class="bg-slate-900 text-white px-10 py-5 rounded-2xl font-black hover:bg-slate-800 transition-all active:scale-95 shadow-lg flex items-center justify-center gap-3 text-lg"><span class="sm:inline">ค้นหา</span> <i data-lucide="arrow-right" class="w-6 h-6"></i></button>
                     </div>
                 </div>
             </div>
@@ -718,7 +780,7 @@
 
     <!-- MODAL: ADD/EDIT USER (เพิ่ม/แก้ไขผู้ใช้งาน) -->
     <div id="modal-user" class="modal z-[90000]">
-        <div class="bg-white p-10 md:p-14 rounded-[3.5rem] w-full max-w-2xl shadow-2xl overflow-y-auto max-h-[90vh] custom-scroll relative">
+        <div class="bg-white p-10 md:p-14 rounded-[3.5rem] w-full max-w-3xl shadow-2xl overflow-y-auto max-h-[90vh] custom-scroll relative">
             <div class="relative text-center mb-10 pt-2">
                 <h4 class="text-4xl font-black text-slate-800 tracking-tighter" id="user-modal-title">เพิ่มผู้ใช้งาน</h4>
                 <p class="text-slate-400 font-bold text-sm uppercase tracking-widest mt-2">User Configuration</p>
@@ -757,11 +819,11 @@
                 </div>
                 <div>
                     <label class="text-[11px] font-black text-slate-400 uppercase ml-2 mb-2 block">Username (สำหรับล็อกอิน)</label>
-                    <input type="text" id="usr-username" autocomplete="off" class="w-full px-6 py-5 bg-slate-50 border border-slate-200 rounded-2xl font-black text-lg outline-none focus:bg-white focus:border-blue-500 transition-all shadow-sm" placeholder="เช่น eakchai_staff">
+                    <input type="text" id="usr-username" autocomplete="new-password" class="w-full px-6 py-5 bg-slate-50 border border-slate-200 rounded-2xl font-black text-lg outline-none focus:bg-white focus:border-blue-500 transition-all shadow-sm" placeholder="เช่น eakchai_staff">
                 </div>
                 <div>
                     <label class="text-[11px] font-black text-slate-400 uppercase ml-2 mb-2 block">Password (รหัสผ่าน)</label>
-                    <input type="text" id="usr-password" autocomplete="off" class="w-full px-6 py-5 bg-slate-50 border border-slate-200 rounded-2xl font-black text-lg outline-none focus:bg-white focus:border-blue-500 transition-all shadow-sm" placeholder="กำหนดรหัสผ่าน">
+                    <input type="text" id="usr-password" autocomplete="new-password" class="w-full px-6 py-5 bg-slate-50 border border-slate-200 rounded-2xl font-black text-lg outline-none focus:bg-white focus:border-blue-500 transition-all shadow-sm" placeholder="กำหนดรหัสผ่าน">
                 </div>
                 
                 <!-- ส่วนกำหนดสิทธิ์แบบเลือกโซนได้ (Permissions) -->
@@ -791,6 +853,54 @@
                         </label>
                     </div>
                 </div>
+
+                <!-- ส่วนกำหนดขอบเขตการดูข้อมูล (Data Scope) -->
+                <div id="data-scope-container" class="md:col-span-2 pt-6 border-t border-slate-100 mt-2">
+                    <label class="text-[11px] font-black text-slate-400 uppercase ml-2 mb-4 block">ขอบเขตการเห็นข้อมูลตาราง (Data Scope)</label>
+                    <div class="space-y-6">
+                        <div>
+                            <select id="usr-data-scope" onchange="window.toggleDataScope()" class="w-full px-6 py-5 bg-slate-50 border border-slate-200 rounded-2xl font-black text-lg outline-none focus:bg-white focus:border-blue-500 transition-all shadow-sm">
+                                <option value="all">ดูข้อมูลได้ทั้งหมด (View All)</option>
+                                <option value="own">ดูเฉพาะงานที่ตัวเองแจ้ง / รับผิดชอบเท่านั้น (Own Only)</option>
+                                <option value="custom">กำหนดเองอย่างละเอียด (Custom Specific)</option>
+                            </select>
+                            
+                            <!-- พื้นที่กำหนดสิทธิ์แบบละเอียด (จะแสดงเมื่อเลือก Custom) -->
+                            <div id="custom-scope-details" class="hidden mt-6 space-y-6 p-6 bg-slate-50 border border-slate-200 rounded-3xl">
+                                
+                                <!-- เลือกดูงานของพนักงานคนอื่น -->
+                                <div>
+                                    <label class="text-[11px] font-black text-slate-500 uppercase mb-3 block border-b border-slate-200 pb-2"><i data-lucide="users" class="w-4 h-4 inline mb-1"></i> อนุญาตให้ดูงานของพนักงานเหล่านี้:</label>
+                                    <div id="scope-users" class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-40 overflow-y-auto custom-scroll pr-2"></div>
+                                </div>
+                                
+                                <!-- เลือกใบงานแจ้งซ่อมเฉพาะเจาะจง -->
+                                <div>
+                                    <label class="text-[11px] font-black text-slate-500 uppercase mb-3 block border-b border-slate-200 pb-2"><i data-lucide="clipboard-list" class="w-4 h-4 inline mb-1"></i> อนุญาตให้เห็นใบงานแจ้งซ่อมเฉพาะ (Repairs):</label>
+                                    <div id="scope-repairs" class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-48 overflow-y-auto custom-scroll pr-2"></div>
+                                </div>
+
+                                <!-- เลือกใบงานติดตั้งเฉพาะเจาะจง -->
+                                <div>
+                                    <label class="text-[11px] font-black text-slate-500 uppercase mb-3 block border-b border-slate-200 pb-2"><i data-lucide="hammer" class="w-4 h-4 inline mb-1"></i> อนุญาตให้เห็นใบงานติดตั้งเฉพาะ (Installs):</label>
+                                    <div id="scope-installs" class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-48 overflow-y-auto custom-scroll pr-2"></div>
+                                </div>
+
+                                <!-- เลือกหมวดหมู่คลังสินค้า -->
+                                <div>
+                                    <label class="text-[11px] font-black text-slate-500 uppercase mb-3 block border-b border-slate-200 pb-2"><i data-lucide="box" class="w-4 h-4 inline mb-1"></i> อนุญาตให้เข้าถึงคลังสินค้าเฉพาะหมวด (Stock Category):</label>
+                                    <div id="scope-stock-cats" class="flex flex-wrap gap-3"></div>
+                                </div>
+
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-[11px] font-black text-slate-400 uppercase ml-2 mb-2 block">จำกัดจำนวนการมองเห็นใบงาน (0 = ไม่จำกัดจำนวน)</label>
+                            <input type="number" id="usr-ticket-limit" class="w-full px-6 py-5 bg-white border border-slate-200 rounded-2xl font-black text-lg outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-sm" placeholder="เช่น 5 (เห็นแค่ 5 งานล่าสุด)">
+                        </div>
+                    </div>
+                </div>
+
             </div>
             <button onclick="window.saveUser()" class="w-full mt-12 py-6 bg-blue-600 text-white font-black rounded-2xl shadow-xl shadow-blue-500/30 hover:bg-blue-700 transition-all active:scale-95 uppercase tracking-widest text-xl">
                 บันทึกข้อมูลผู้ใช้งาน
@@ -1700,16 +1810,59 @@
         window.togglePermVisibility = function() {
             var role = document.getElementById('usr-role').value;
             var permContainer = document.getElementById('perm-container');
+            var dataScopeContainer = document.getElementById('data-scope-container');
             if (role === 'customer') {
-                permContainer.style.display = 'none';
+                if(permContainer) permContainer.style.display = 'none';
+                if(dataScopeContainer) dataScopeContainer.style.display = 'none';
             } else {
-                permContainer.style.display = 'block';
+                if(permContainer) permContainer.style.display = 'block';
+                if(dataScopeContainer) dataScopeContainer.style.display = 'block';
+            }
+        };
+
+        window.toggleDataScope = function() {
+            var scopeEl = document.getElementById('usr-data-scope');
+            var customDetailsEl = document.getElementById('custom-scope-details');
+            if(scopeEl && customDetailsEl) {
+                if(scopeEl.value === 'custom') {
+                    customDetailsEl.classList.remove('hidden');
+                } else {
+                    customDetailsEl.classList.add('hidden');
+                }
             }
         };
 
         window.openUserModal = function(id = null) {
             var allCbs = document.querySelectorAll('.perm-cb');
             allCbs.forEach(cb => { cb.checked = false; cb.disabled = false; }); 
+            window.clearUserImage();
+            
+            // 1. เรนเดอร์รายชื่อพนักงาน
+            var usersEl = document.getElementById('scope-users');
+            if(usersEl) {
+                var staffList = usersDB.filter(u => u.role !== 'customer');
+                usersEl.innerHTML = staffList.map(u => `<label class="flex items-center gap-2 bg-white px-4 py-3 rounded-xl border border-slate-200 cursor-pointer hover:border-blue-400 transition-all shadow-sm"><input type="checkbox" value="${u.name}" class="scope-user-cb w-4 h-4 rounded text-blue-600 border-slate-300"> <span class="truncate text-xs">${u.name}</span></label>`).join('');
+            }
+            
+            // 2. เรนเดอร์ใบงานแจ้งซ่อม
+            var repEl = document.getElementById('scope-repairs');
+            if(repEl) {
+                repEl.innerHTML = dataList.map(r => `<label class="flex items-center gap-2 bg-white px-4 py-3 rounded-xl border border-slate-200 cursor-pointer hover:border-blue-400 transition-all shadow-sm"><input type="checkbox" value="${r.id}" class="scope-repair-cb w-4 h-4 rounded text-blue-600 border-slate-300"> <div class="truncate text-[10px] leading-tight"><span class="font-black text-blue-600">${r.id}</span><br>${r.subject}</div></label>`).join('');
+            }
+
+            // 3. เรนเดอร์ใบงานติดตั้ง
+            var insEl = document.getElementById('scope-installs');
+            if(insEl) {
+                insEl.innerHTML = installJobs.map(i => `<label class="flex items-center gap-2 bg-white px-4 py-3 rounded-xl border border-slate-200 cursor-pointer hover:border-blue-400 transition-all shadow-sm"><input type="checkbox" value="${i.id}" class="scope-install-cb w-4 h-4 rounded text-blue-600 border-slate-300"> <div class="truncate text-[10px] leading-tight"><span class="font-black text-blue-600">${i.id}</span><br>${i.subject}</div></label>`).join('');
+            }
+
+            // 4. เรนเดอร์หมวดหมู่สินค้า
+            var stockCatEl = document.getElementById('scope-stock-cats');
+            if(stockCatEl) {
+                var uniqueCats = [...new Set(stockItems.map(item => item.cat))];
+                var catsToRender = uniqueCats.length > 0 ? uniqueCats : ['Hardware', 'Network', 'Cables', 'Accessories'];
+                stockCatEl.innerHTML = catsToRender.map(c => `<label class="flex items-center gap-2 bg-white px-4 py-3 rounded-xl border border-slate-200 cursor-pointer hover:border-blue-400 transition-all shadow-sm"><input type="checkbox" value="${c}" class="scope-stock-cb w-4 h-4 rounded text-blue-600 border-slate-300"> <span class="truncate text-xs font-bold">${c}</span></label>`).join('');
+            }
             
             if(id) {
                 var usr = usersDB.find(x => x.id === id);
@@ -1720,39 +1873,90 @@
                 document.getElementById('usr-password').value = usr.password;
                 document.getElementById('user-modal-title').innerText = 'แก้ไขข้อมูลผู้ใช้งาน';
                 
-                var userPerms = usr.permissions;
-                if (!userPerms) {
-                    if (usr.role === 'admin') userPerms = ['dashboard', 'reports', 'installations', 'locations', 'stock', 'borrow', 'users'];
-                    else if (usr.role === 'staff') userPerms = ['locations'];
-                    else userPerms = [];
+                if (usr.image) {
+                    window.currentUserImage = usr.image;
+                    document.getElementById('usr-img-preview').src = usr.image;
+                    document.getElementById('usr-img-preview').classList.remove('hidden');
+                    document.getElementById('usr-img-icon').classList.add('hidden');
+                    document.getElementById('btn-clear-usr-img').classList.remove('hidden');
                 }
                 
-                allCbs.forEach(cb => {
-                    if (userPerms.includes(cb.value)) cb.checked = true;
-                });
+                var userPerms = usr.permissions || [];
+                allCbs.forEach(cb => { if (userPerms.includes(cb.value)) cb.checked = true; });
+                
+                var scopeEl = document.getElementById('usr-data-scope');
+                var limitEl = document.getElementById('usr-ticket-limit');
+                if(scopeEl) {
+                    scopeEl.value = usr.dataScopeType || 'all';
+                    if (usr.dataScopeType === 'custom') {
+                        var vUsers = usr.visibleUsers || [];
+                        var vReps = usr.visibleRepairs || [];
+                        var vIns = usr.visibleInstalls || [];
+                        var vStock = usr.visibleStockCats || [];
+
+                        document.querySelectorAll('.scope-user-cb').forEach(cb => { if (vUsers.includes(cb.value)) cb.checked = true; });
+                        document.querySelectorAll('.scope-repair-cb').forEach(cb => { if (vReps.includes(cb.value)) cb.checked = true; });
+                        document.querySelectorAll('.scope-install-cb').forEach(cb => { if (vIns.includes(cb.value)) cb.checked = true; });
+                        document.querySelectorAll('.scope-stock-cb').forEach(cb => { if (vStock.includes(cb.value)) cb.checked = true; });
+                    }
+                }
+                if(limitEl) limitEl.value = usr.ticketLimit || 0;
                 
                 if(usr.id === 'usr-admin') {
                     document.getElementById('usr-role').disabled = true; 
+                    if(scopeEl) scopeEl.disabled = true; 
+                    if(limitEl) limitEl.disabled = true; 
                     allCbs.forEach(cb => { cb.checked = true; cb.disabled = true; }); 
                 } else {
                     document.getElementById('usr-role').disabled = false;
+                    if(scopeEl) scopeEl.disabled = false; 
+                    if(limitEl) limitEl.disabled = false; 
                 }
             } else {
                 document.getElementById('usr-id').value = '';
                 document.getElementById('usr-role').value = 'staff';
                 document.getElementById('usr-role').disabled = false;
+                var scopeEl = document.getElementById('usr-data-scope');
+                var limitEl = document.getElementById('usr-ticket-limit');
+                if(scopeEl) { scopeEl.disabled = false; scopeEl.value = 'all'; }
+                if(limitEl) { limitEl.disabled = false; limitEl.value = 0; }
                 document.getElementById('usr-name').value = '';
                 document.getElementById('usr-username').value = '';
                 document.getElementById('usr-password').value = '';
                 document.getElementById('user-modal-title').innerText = 'เพิ่มผู้ใช้งานเข้าระบบ';
                 
-                allCbs.forEach(cb => {
-                    if (cb.value === 'locations') cb.checked = true;
-                });
+                allCbs.forEach(cb => { if (cb.value === 'locations') cb.checked = true; });
             }
             
             window.togglePermVisibility(); 
+            window.toggleDataScope();
             document.getElementById('modal-user').classList.add('active');
+            if(typeof lucide !== 'undefined') lucide.createIcons();
+        };
+
+        window.currentUserImage = null;
+
+        window.handleUserImageUpload = function(event) {
+            var file = event.target.files[0];
+            if (!file) return;
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                window.currentUserImage = e.target.result;
+                document.getElementById('usr-img-preview').src = window.currentUserImage;
+                document.getElementById('usr-img-preview').classList.remove('hidden');
+                document.getElementById('usr-img-icon').classList.add('hidden');
+                document.getElementById('btn-clear-usr-img').classList.remove('hidden');
+                document.getElementById('usr-image').value = '';
+            };
+            reader.readAsDataURL(file);
+        };
+
+        window.clearUserImage = function() {
+            window.currentUserImage = null;
+            document.getElementById('usr-img-preview').src = '';
+            document.getElementById('usr-img-preview').classList.add('hidden');
+            document.getElementById('usr-img-icon').classList.remove('hidden');
+            document.getElementById('btn-clear-usr-img').classList.add('hidden');
         };
 
         window.saveUser = async function() {
@@ -1768,27 +1972,68 @@
             if(exists) return window.showAlert('Username นี้มีในระบบแล้ว กรุณาใช้ชื่ออื่น', true);
 
             var permissions = [];
+            var dataScopeType = 'all';
+            var visibleUsers = [];
+            var visibleRepairs = [];
+            var visibleInstalls = [];
+            var visibleStockCats = [];
+            var ticketLimit = 0;
+
             if (role !== 'customer') {
+                var limitEl = document.getElementById('usr-ticket-limit');
+                if(limitEl) ticketLimit = parseInt(limitEl.value) || 0;
+                
                 if (id === 'usr-admin') {
                     permissions = ['dashboard', 'reports', 'installations', 'locations', 'stock', 'borrow', 'users'];
+                    dataScopeType = 'all';
+                    ticketLimit = 0;
                 } else {
                     permissions = Array.from(document.querySelectorAll('.perm-cb:checked')).map(cb => cb.value);
+                    var scopeEl = document.getElementById('usr-data-scope');
+                    if(scopeEl) {
+                        dataScopeType = scopeEl.value;
+                        if(dataScopeType === 'custom') {
+                            visibleUsers = Array.from(document.querySelectorAll('.scope-user-cb:checked')).map(cb => cb.value);
+                            visibleRepairs = Array.from(document.querySelectorAll('.scope-repair-cb:checked')).map(cb => cb.value);
+                            visibleInstalls = Array.from(document.querySelectorAll('.scope-install-cb:checked')).map(cb => cb.value);
+                            visibleStockCats = Array.from(document.querySelectorAll('.scope-stock-cb:checked')).map(cb => cb.value);
+                        }
+                    }
                 }
             }
 
             var data = {
                 id: id ? id : 'USR-' + Date.now(),
-                role: role, name: name, username: username, password: password, permissions: permissions
+                role: role, 
+                name: name, 
+                username: username, 
+                password: password, 
+                permissions: permissions,
+                dataScopeType: dataScopeType,
+                visibleUsers: visibleUsers,
+                visibleRepairs: visibleRepairs,
+                visibleInstalls: visibleInstalls,
+                visibleStockCats: visibleStockCats,
+                ticketLimit: ticketLimit
             };
 
             var existingIdx = usersDB.findIndex(x => x.id === data.id);
-            if(existingIdx >= 0) usersDB[existingIdx] = data;
-            else usersDB.push(data);
+            if(existingIdx >= 0) {
+                data.image = window.currentUserImage !== null ? window.currentUserImage : usersDB[existingIdx].image;
+                usersDB[existingIdx] = Object.assign({}, usersDB[existingIdx], data);
+            } else {
+                data.image = window.currentUserImage;
+                usersDB.push(data);
+            }
             
             window.saveLocal();
             window.renderUsers();
-            if(window.dbOp) window.dbOp.saveUser(data);
+            
+            var finalDataToSave = existingIdx >= 0 ? usersDB[existingIdx] : data;
+            if(window.dbOp) window.dbOp.saveUser(finalDataToSave);
+            
             window.closeModal('modal-user');
+            window.showAlert('บันทึกข้อมูลและสิทธิ์การเข้าถึงเรียบร้อยแล้ว');
         };
 
         window.deleteUser = async function(id) {
@@ -2058,7 +2303,9 @@
         window.renderInstallTable = function() {
             var tbody = document.getElementById('install-table-body');
             if(!tbody) return;
-            tbody.innerHTML = installJobs.map(item => `
+            var vInstalls = window.getVisibleInstalls ? window.getVisibleInstalls() : installJobs;
+            
+            tbody.innerHTML = vInstalls.map(item => `
                 <tr class="hover:bg-slate-50 transition-colors group border-b border-slate-100 cursor-pointer" onclick="window.openInstallModal('${item.id}')">
                     <td class="px-8 py-8">
                         <p class="text-blue-600 font-black text-lg md:text-xl">#${item.id}</p>
@@ -2507,6 +2754,105 @@
                 </div>
             `).join('');
             if(typeof lucide !== 'undefined') lucide.createIcons();
+            
+            // อัปเดตหน้าลูกค้าอัตโนมัติเมื่อแอดมินแก้ไขสต๊อก
+            if(window.renderPublicStock) window.renderPublicStock();
+        };
+
+        window.renderPublicStock = function() {
+            var grid = document.getElementById('public-stock-grid');
+            if(!grid) return;
+            
+            // โชว์เฉพาะสินค้าที่จำนวนเหลือมากกว่า 0
+            var availableItems = stockItems.filter(item => item.qty > 0);
+            
+            grid.innerHTML = availableItems.map(item => `
+                <div class="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm flex flex-col h-full hover:shadow-lg transition-shadow text-left group">
+                    <div class="flex justify-between items-start mb-4">
+                        <span class="px-4 py-1.5 bg-blue-50 text-blue-600 text-[11px] font-black uppercase tracking-widest rounded-xl shadow-sm">${item.cat}</span>
+                    </div>
+                    <div class="flex-1 mb-4">
+                        <h3 class="text-2xl font-black text-slate-800 leading-tight mb-2 group-hover:text-blue-600 transition-colors">${item.name}</h3>
+                        <p class="text-sm text-slate-500 font-bold"><i data-lucide="tag" class="w-4 h-4 inline text-blue-400"></i> ${item.brand}</p>
+                    </div>
+                    <div class="pt-6 border-t border-slate-100 flex flex-col justify-between">
+                        <div class="flex justify-between items-end mb-6">
+                            <span class="text-[11px] text-slate-400 font-black uppercase tracking-widest">พร้อมยืม/เบิก</span>
+                            <span class="text-4xl font-black text-emerald-600">${item.qty} <span class="text-lg text-slate-500">ชิ้น</span></span>
+                        </div>
+                        <button onclick="window.requestBorrowItem('${item.id}')" class="w-full py-4 bg-blue-50 border border-blue-100 text-blue-600 font-black text-sm uppercase tracking-widest rounded-2xl hover:bg-blue-600 hover:text-white hover:shadow-md transition-all flex items-center justify-center gap-2 group/btn">
+                            <i data-lucide="send" class="w-5 h-5 group-hover/btn:scale-110 group-hover/btn:-translate-y-1 transition-transform"></i> แจ้งขอยืมอุปกรณ์นี้
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+            
+            if(availableItems.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center py-10 text-slate-400 font-bold text-lg"><i data-lucide="package-x" class="w-16 h-16 mx-auto mb-4 opacity-50"></i>ไม่มีอุปกรณ์พร้อมให้เบิก/ยืมในขณะนี้</div>`;
+            }
+            if(typeof lucide !== 'undefined') lucide.createIcons();
+        };
+
+        window.requestBorrowItem = function(id) {
+            var item = stockItems.find(x => x.id === id);
+            if(!item || item.qty <= 0) return window.showAlert('อุปกรณ์นี้หมดคลังชั่วคราว', true);
+            
+            document.getElementById('req-item-id').value = item.id;
+            document.getElementById('req-item-name').innerText = item.name + ' (มีในคลัง ' + item.qty + ' ชิ้น)';
+            document.getElementById('req-qty').value = 1;
+            document.getElementById('req-qty').max = item.qty;
+            document.getElementById('req-person').value = '';
+            document.getElementById('req-location').value = '';
+            
+            // ปิดหน้าต่างคลังชั่วคราว แล้วเปิดหน้าฟอร์มขอยืม
+            window.closeModal('modal-public-stock');
+            document.getElementById('modal-public-borrow-request').classList.add('active');
+        };
+
+        window.submitPublicBorrowRequest = function() {
+            var id = document.getElementById('req-item-id').value;
+            var item = stockItems.find(x => x.id === id);
+            var qty = parseInt(document.getElementById('req-qty').value);
+            var person = document.getElementById('req-person').value.trim();
+            var location = document.getElementById('req-location').value.trim();
+            
+            if(!person || !location) return window.showAlert('กรุณากรอกข้อมูลให้ครบถ้วน', true);
+            if(isNaN(qty) || qty <= 0 || qty > item.qty) return window.showAlert('จำนวนไม่ถูกต้อง หรือเกินกว่าที่คลังมี', true);
+            
+            var ticketId = 'REQ-' + Math.floor(1000 + Math.random() * 9000);
+            
+            var newData = {
+                id: ticketId,
+                date: todayStr,
+                createdAt: new Date().toISOString(),
+                type: 'เบิกยืม',
+                subject: `ขอเบิก/ยืม: ${item.name} (จำนวน ${qty} ชิ้น)`,
+                location: location,
+                reporter: person,
+                dept: '-',
+                status: 'รอดำเนินการ',
+                lat: 13.7563,
+                lng: 100.5018,
+                assignedTech: '-',
+                equipment: item.name,
+                history: [{time: new Date().toLocaleTimeString(), action: 'ส่งคำขอเบิก/ยืมอุปกรณ์จากหน้าลูกค้า', by: 'ลูกค้า'}]
+            };
+
+            dataList.push(newData);
+            window.saveLocal();
+            
+            if(window.dbOp) window.dbOp.saveRepair(newData);
+            
+            window.closeModal('modal-public-borrow-request');
+            window.showAlert(`ส่งคำขอยืมอุปกรณ์เรียบร้อยแล้ว! แอดมินจะได้รับข้อมูลทันที\nรหัสอ้างอิงสำหรับติดตามสถานะคือ: ${ticketId}`);
+            
+            document.getElementById('track-id').value = ticketId;
+            window.trackTicket();
+        };
+
+        window.openPublicStockModal = function() {
+            window.renderPublicStock();
+            document.getElementById('modal-public-stock').classList.add('active');
         };
 
         window.openStockModal = function(id = null) {
@@ -2950,14 +3296,14 @@
             document.getElementById('in-lng').value = '';
             document.getElementById('in-equipment').value = '';
             document.getElementById('modal-repair').classList.add('active');
-            setTimeout(() => {
+            setTimeout(() => {i
                 if(!pickerMap) {
                     pickerMap = window.initMapSafe('picker-map', 13.7563, 100.5018, 15, (map) => {
                         map.addListener('click', (e) => {
                             document.getElementById('in-lat').value = e.latLng.lat().toFixed(6);
                             document.getElementById('in-lng').value = e.latLng.lng().toFixed(6);
                             if(pickerMarker) pickerMarker.setMap(null);
-                            pickerMarker = new google.maps.Marker({ position: e.latLng, map: map });
+                            pickerMarker = new google.maps.Marker({ postion: e.latLng, map: map });
                         });
                     });
                 } else {
